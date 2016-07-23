@@ -54,10 +54,5 @@ void i2c() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  Serial.print("{\"ms\":"); Serial.print(millis());
-  printout("pressure", "ptemp", readP);
-  printout("rh", "rhtemp", readRH);
-  printout("vphoton", "ref", readPhoton);
-  printout("battery", "vref", readBatt);
-  Serial.println("}");
+  csv();
 }

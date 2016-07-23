@@ -57,3 +57,24 @@ struct measurement readBatt() {
   rtn.a *= rtn.b * 4.90; // Battery voltage is in voltage divider: (3.9k+1k)/1k
   return rtn;
 }
+
+void json() {
+    Serial.print("{\"ms\":"); Serial.print(millis());
+  printoutJson("pressure", "ptemp", readP);
+  printoutJson("rh", "rhtemp", readRH);
+  printoutJson("vphoton", "ref", readPhoton);
+  printoutJson("battery", "vref", readBatt);
+  Serial.println("}");
+}
+
+
+void csv() {
+//  Serial.print(millis());
+  printoutCsv(readP);
+  printoutCsv(readP);
+  printoutCsv(readRH);
+  printoutCsv(readPhoton);
+  printoutCsv(readBatt);
+  Serial.println("");
+}
+

@@ -29,8 +29,14 @@ struct measurement {
 
 typedef struct measurement (*mfptr)(void);
 
-void printout(String a, String b, mfptr opt) {
+void printoutJson(String a, String b, mfptr opt) {
   struct measurement data = (*opt)();
   Serial.print(",\""); Serial.print(a); Serial.print("\":"); Serial.print(data.a);
   Serial.print(",\""); Serial.print(b); Serial.print("\":"); Serial.print(data.b);
+}
+
+void printoutCsv(mfptr opt) {
+  struct measurement data = (*opt)();
+  Serial.print(","); Serial.print(data.a); 
+  Serial.print(","); Serial.print(data.b);
 }
