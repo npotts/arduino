@@ -31,8 +31,8 @@ typedef struct measurement (*mfptr)(void);
 
 void printoutJson(String a, String b, mfptr opt) {
   struct measurement data = (*opt)();
-  Serial.print(",\""); Serial.print(a); Serial.print("\":"); Serial.print(data.a);
-  Serial.print(",\""); Serial.print(b); Serial.print("\":"); Serial.print(data.b);
+  if (data.a == data.a) { Serial.print(",\""); Serial.print(a); Serial.print("\":"); Serial.print(data.a);} //fails if NAN
+  if (data.b == data.b) { Serial.print(",\""); Serial.print(b); Serial.print("\":"); Serial.print(data.b);}
 }
 
 void printoutCsv(mfptr opt) {

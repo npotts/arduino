@@ -24,35 +24,47 @@ SOFTWARE.
 
 #include <Wire.h>
 #include "helpers.h"
+#include "w1temp.h"
 #include "SparkFunMPL3115A2.h" //Pressure sensor - Search "SparkFun MPL3115" and install from Library Manager
 #include "SparkFunHTU21D.h" //Humidity sensor - Search "SparkFun HTU21D" and install from Library Manager
 
 MPL3115A2 barometer;
 HTU21D rh;
+/*I have a DS18B20 (family 0x28) connected to pin 10 in a full 3 pin (vcc, 1wire, gnd) topology
+ * waiting 800ms before retrieving data. (lowest resolution) */
+W1temp thermometer(10, 0x28, 0, 800);
+
 //assigned pins
 const byte REFERENCE_3V3 = A3;
 const byte LIGHT = A1;
 const byte BATT = A2;
 
 void setup() {
-  Serial.begin(57600);
-  i2c();
   pinMode(REFERENCE_3V3, INPUT);
   pinMode(LIGHT, INPUT);
   pinMode(BATT, INPUT);
+  Serial.begin(57600);
+  w1();
+  i2c();
+}
+
+void w1() {
+  while(!thermometer.locate()) {
+    Serial.println("Cannot find 1w device");
+  }
 }
 
 void i2c() {
+  /*Begin RH*/
+  rh.begin();
   /*Setup Barometer*/
   barometer.begin(); // Get sensor online
   barometer.setModeBarometer(); // Measure pressure in Pascals from 20 to 110 kPa
   barometer.setOversampleRate(7); // Set Oversample to the recommended 128
   barometer.enableEventFlags();
-  /*Begin RH*/
-  rh.begin();
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  csv();
+  thermometer.measure(); //prep read
+  json();
 }

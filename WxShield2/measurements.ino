@@ -22,15 +22,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <math.h>
+
 struct measurement readP() {
-  struct measurement rtn;
+  struct measurement rtn = {NAN, NAN};
   rtn.a = barometer.readPressure() / 100.00;
   rtn.b = barometer.readTemp();
   return rtn;
 }
 
 struct measurement readRH() {
-  struct measurement rtn;
+  struct measurement rtn = {NAN, NAN};
   rtn.a = rh.readHumidity();
   if (rtn.a == 998) {
     rh.begin();
@@ -41,7 +43,7 @@ struct measurement readRH() {
 }
 
 struct measurement readPhoton() {
-  struct measurement rtn;
+  struct measurement rtn = {NAN, NAN};
   rtn.a = analogRead(LIGHT); //read the light sensor
   rtn.b = analogRead(REFERENCE_3V3); //read the reference 3.3V signal to get the full-scale value
   rtn.b = 3.3 / rtn.b; //scale to get full-scale reading value
@@ -50,7 +52,7 @@ struct measurement readPhoton() {
 }
 
 struct measurement readBatt() {
-  struct measurement rtn;
+  struct measurement rtn = {NAN, NAN};
   rtn.a = analogRead(BATT); //read battery voltage
   rtn.b = analogRead(REFERENCE_3V3); //read the reference 3.3V signal to get the full-scale value
   rtn.b = 3.3 / rtn.b; //scale to get full-scale reading value
@@ -58,8 +60,17 @@ struct measurement readBatt() {
   return rtn;
 }
 
+struct measurement readTemp() {
+  struct measurement rtn = {NAN, NAN};
+  thermometer.temperature(&rtn);
+  return rtn;
+}
+
+
+uint32_t index = 0;
 void json() {
-    Serial.print("{\"ms\":"); Serial.print(millis());
+  Serial.print("{\"index\":"); Serial.print(index++);
+  printoutJson("temperature", "fahrenheit", readTemp);
   printoutJson("pressure", "ptemp", readP);
   printoutJson("rh", "rhtemp", readRH);
   printoutJson("vphoton", "ref", readPhoton);
@@ -69,7 +80,8 @@ void json() {
 
 
 void csv() {
-//  Serial.print(millis());
+  Serial.print(index++);
+  printoutCsv(readTemp);
   printoutCsv(readP);
   printoutCsv(readP);
   printoutCsv(readRH);
