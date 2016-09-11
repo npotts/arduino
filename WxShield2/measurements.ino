@@ -61,14 +61,14 @@ void niceSql(float val) {
   if (val == val) {
     Serial.print(val, 6);
   } else {
-    Serial.print("NAN");
+    Serial.print("NULL");
   }
 }
 
 void sqlinsert(String table, struct frame frame) {
   Serial.print("INSERT INTO "); 
   Serial.print(table); 
-  Serial.print(" (index, pressure, tempa, tempb, humidity, ptemp, htemp, battery) VALUES (");
+  Serial.print(" (indx, pressure, tempa, tempb, humidity, ptemp, htemp, battery) VALUES (");
   Serial.print(frame.index);
   niceSql(frame.pressure);
   niceSql(frame.tempA);
