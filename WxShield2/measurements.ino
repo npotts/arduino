@@ -22,69 +22,74 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <math.h>
+#include "measurements.h"
 
-struct measurement readP() {
-  struct measurement rtn = {NAN, NAN};
-  rtn.a = barometer.readPressure() / 100.00;
-  rtn.b = barometer.readTemp();
+
+struct frame fetch() {
+  struct frame rtn = {index++, NAN, NAN, NAN, NAN, NAN, NAN, NAN, NAN};
+  thermometer1.measure(); //prep read
+  thermometer2.measure(); //prep read
+  rtn.pressure = barometer.readPressure() / 100.00; if (rtn.pressure < 0) { rtn.pressure = NAN; }
+  rtn.ptemp = barometer.readTemp(); if (rtn.ptemp == -999.0) { rtn.ptemp = NAN; }
+  rtn.humidity = rh.readHumidity();
+  if (rtn.humidity == 998) { rh.begin(); rtn.humidity = NAN; } else { rtn.htemp = rh.readTemperature(); }
+  rtn.vref = 3.3 / analogRead(REFERENCE_3V3); //read the reference 3.3V signal to get the full-scale value
+  rtn.battery = analogRead(BATT) * rtn.vref * 4.90; // Battery voltage is in voltage divider: (3.9k+1k)/1k
+  //wait full 800ms:
+  delay(600);
+  
+  rtn.tempA = thermometer1.temperature();
+  rtn.tempB = thermometer2.temperature();
   return rtn;
 }
 
-struct measurement readRH() {
-  struct measurement rtn = {NAN, NAN};
-  rtn.a = rh.readHumidity();
-  if (rtn.a == 998) {
-    rh.begin();
-    rtn.a = NAN;
-    return rtn;
+void niceJson(String key, float val) {
+  if (val == val) {
+    Serial.print(",\""); Serial.print(key); Serial.print("\":"); Serial.print(val);
   }
-  rtn.b = rh.readTemperature();
-  return rtn;
 }
 
-struct measurement readPhoton() {
-  struct measurement rtn = {NAN, NAN};
-  rtn.a = analogRead(LIGHT); //read the light sensor
-  rtn.b = analogRead(REFERENCE_3V3); //read the reference 3.3V signal to get the full-scale value
-  rtn.b = 3.3 / rtn.b; //scale to get full-scale reading value
-  rtn.a *= rtn.b; //expand light sensor to full scale again.
-  return rtn;
+void niceCsv(float val) {
+  Serial.print(",");
+  if (val == val) {
+    Serial.print(val);
+  }
 }
 
-struct measurement readBatt() {
-  struct measurement rtn = {NAN, NAN};
-  rtn.a = analogRead(BATT); //read battery voltage
-  rtn.b = analogRead(REFERENCE_3V3); //read the reference 3.3V signal to get the full-scale value
-  rtn.b = 3.3 / rtn.b; //scale to get full-scale reading value
-  rtn.a *= rtn.b * 4.90; // Battery voltage is in voltage divider: (3.9k+1k)/1k
-  return rtn;
+void niceSql(float val) {
+  Serial.print(",");
+  if (val == val) {
+    Serial.print(val, 6);
+  } else {
+    Serial.print("NAN");
+  }
 }
 
-struct measurement readTemp() {
-  struct measurement rtn = {thermometer1.temperature(), thermometer2.temperature()};
-  return rtn;
+void sqlinsert(String table, struct frame frame) {
+  Serial.print("INSERT INTO "); 
+  Serial.print(table); 
+  Serial.print(" (index, pressure, tempa, tempb, humidity, ptemp, htemp, battery) VALUES (");
+  Serial.print(frame.index);
+  niceSql(frame.pressure);
+  niceSql(frame.tempA);
+  niceSql(frame.tempB);
+  niceSql(frame.humidity);
+  niceSql(frame.ptemp);
+  niceSql(frame.htemp);
+  niceSql(frame.battery);
+  Serial.println(");");
 }
 
-
-uint32_t index = 0;
-void json() {
-  Serial.print("{\"index\":"); Serial.print(index++);
-  printoutJson("pressure", "ptemp", readP);
-  printoutJson("rh", "rhtemp", readRH);
-//  printoutJson("vphoton", "ref", readPhoton);
-//  printoutJson("battery", "vref", readBatt);
-  printoutJson("temperature_a", "temperature_b", readTemp);
+void json(struct frame frame) {
+  Serial.print("{\"index\":"); Serial.print(frame.index);
+  niceJson("pressure", frame.pressure);
+  niceJson("temp_a", frame.tempA);
+  niceJson("temp_b", frame.tempB);
+  niceJson("humidity", frame.humidity);
+  niceJson("ptemp", frame.ptemp);
+  niceJson("htemp", frame.htemp);
+  niceJson("battery", frame.battery);
   Serial.println("}");
 }
 
-void csv() {
-  Serial.print(index++);
-  printoutCsv(readTemp);
-  printoutCsv(readP);
-  printoutCsv(readRH);
-  printoutCsv(readPhoton);
-  printoutCsv(readBatt);
-  Serial.println("");
-}
 

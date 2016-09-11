@@ -43,9 +43,6 @@ public:
     //locate searches for a W1temp item, and returns true if one is found
     bool locate(unsigned int skip=0); //returns true if a sensor from family is found
 
-    //setAddress sets the address to use in liu of locateFirst
-    bool setAddress(byte addr[8]);
-
     //measure starts measuring a temperature - returning false if it encountered errors (eg, 1wire device removed)
     bool measure(void);
 

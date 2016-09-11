@@ -23,8 +23,9 @@ SOFTWARE.
 */
 
 #include <Wire.h>
-#include "helpers.h"
 #include "w1temp.h"
+#include "measurements.h"
+
 #include "SparkFunMPL3115A2.h" //Pressure sensor - Search "SparkFun MPL3115" and install from Library Manager
 #include "SparkFunHTU21D.h" //Humidity sensor - Search "SparkFun HTU21D" and install from Library Manager
 
@@ -45,20 +46,19 @@ void setup() {
   pinMode(LIGHT, INPUT);
   pinMode(BATT, INPUT);
   Serial.begin(57600);
-  Serial.println();
+  Serial.println("-- Starting");
   w1();
-//  i2c();
+  i2c();
 }
 
 void w1() {
-  Serial.print("Waiting for 1w devices...");
-  while(!thermometer1.locate()) {}
+  Serial.print("-- Waiting for 1w devices...");
+  while(!thermometer1.locate(0)) {}
   while(!thermometer2.locate(1)) {}
 }
 
 void i2c() {
-  /*Begin RH*/
-  rh.begin();
+  rh.begin(); /*Begin RH*/
   /*Setup Barometer*/
   barometer.begin(); // Get sensor online
   barometer.setModeBarometer(); // Measure pressure in Pascals from 20 to 110 kPa
@@ -66,11 +66,8 @@ void i2c() {
   barometer.enableEventFlags();
 }
 
-
-struct measurement temp;
 void loop() {
-  thermometer1.measure(); //prep read
-  thermometer2.measure(); //prep read
+  struct frame data = fetch();
+  sqlinsert("wx", data);
   delay(1000);
-  json();
 }

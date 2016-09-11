@@ -20,23 +20,26 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
 */
-struct measurement {
-  float a;
-  float b;
+
+#pragma once
+
+#include <math.h>
+
+
+uint32_t index = 0;
+struct frame {
+  uint32_t index;
+  float pressure;
+  float ptemp;
+  float humidity;
+  float htemp;
+  float tempA;
+  float tempB;
+  float battery;
+  float vref;
 };
 
-typedef struct measurement (*mfptr)(void);
-
-void printoutJson(String a, String b, mfptr opt) {
-  struct measurement data = (*opt)();
-  if (data.a == data.a) { Serial.print(",\""); Serial.print(a); Serial.print("\":"); Serial.print(data.a);} //fails if NAN
-  if (data.b == data.b) { Serial.print(",\""); Serial.print(b); Serial.print("\":"); Serial.print(data.b);}
-}
-
-void printoutCsv(mfptr opt) {
-  struct measurement data = (*opt)();
-  Serial.print(","); Serial.print(data.a); 
-  Serial.print(","); Serial.print(data.b);
-}
+void niceJson(String key, float val);
+void niceCsv(float val);
+void json(struct frame);
