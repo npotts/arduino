@@ -68,6 +68,6 @@ void i2c() {
 
 void loop() {
   struct frame data = fetch();
-  sqlinsert("raw", data);
+  sqlinsert(data);
   delay(1000);
 }
