@@ -1,0 +1,10 @@
+[Unit]
+Description=Proxy the arduino measured wx data to a database
+
+[Service]
+ExecStart=/usr/local/bin/wxproxy
+Restart=always
+RestartSec=5m0s
+
+[Install]
+WantedBy=multi-user.target
