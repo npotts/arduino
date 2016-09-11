@@ -32,7 +32,8 @@ MPL3115A2 barometer;
 HTU21D rh;
 /*I have a DS18B20 (family 0x28) connected to pin 10 in a full 3 pin (vcc, 1wire, gnd) topology
  * waiting 800ms before retrieving data. (lowest resolution) */
-W1temp thermometer(10, 0x28, 0, 800);
+W1temp thermometer1(10, 0x28, 0, 800);
+W1temp thermometer2(10, 0x28, 0, 800);
 
 //assigned pins
 const byte REFERENCE_3V3 = A3;
@@ -44,14 +45,15 @@ void setup() {
   pinMode(LIGHT, INPUT);
   pinMode(BATT, INPUT);
   Serial.begin(57600);
+  Serial.println();
   w1();
-  i2c();
+//  i2c();
 }
 
 void w1() {
-  while(!thermometer.locate()) {
-    Serial.println("Cannot find 1w device");
-  }
+  Serial.print("Waiting for 1w devices...");
+  while(!thermometer1.locate()) {}
+  while(!thermometer2.locate(1)) {}
 }
 
 void i2c() {
@@ -64,7 +66,11 @@ void i2c() {
   barometer.enableEventFlags();
 }
 
+
+struct measurement temp;
 void loop() {
-  thermometer.measure(); //prep read
+  thermometer1.measure(); //prep read
+  thermometer2.measure(); //prep read
+  delay(1000);
   json();
 }

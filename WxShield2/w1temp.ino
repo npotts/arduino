@@ -23,10 +23,29 @@ SOFTWARE.
 */
 
 /*Search for 1wire devices on 1w bus*/
-bool W1temp::locate(void) {
+bool W1temp::locate(unsigned int skip) {
+  int mskip = skip;
   thermo.reset_search();
   thermo.target_search(family); //temp family
-  if (!thermo.search(w1addr)) { return false; }
+  bool ok;
+  
+  while (true) { //prod through
+    if (!thermo.search(w1addr)) {
+      Serial.println("Unable to search for devices");
+      return false;
+    }
+    if (skip == 0) {
+      break;
+    }
+    Serial.print("Skipping #"); Serial.print(skip); Serial.print(" ");
+    for(byte i = 0; i<8; i++) {
+      Serial.print(w1addr[i], HEX);
+    }
+    Serial.println();
+    skip--;
+  }
+
+//  if (!thermo.search(w1addr)) { return false; }
   Serial.print("Found sensor at ");
   for(byte i = 0; i<8; i++) {
     Serial.print(w1addr[i], HEX);
@@ -38,6 +57,20 @@ bool W1temp::locate(void) {
   Serial.println(".");
   return true;
 }
+
+bool W1temp::setAddress(byte addr[8]) {
+  memcpy(w1addr, addr, 8);
+  if (OneWire::crc8(w1addr, 7) != w1addr[7]) {
+    Serial.println(". CRC invalid!");
+    return false;
+  }
+  Serial.print("Using address ");
+  for(byte i = 0; i<8; i++) {
+    Serial.print(w1addr[i], HEX);
+  }
+  Serial.println("");
+  return true;
+}
  
 bool W1temp::measure(void) {
   if (!thermo.reset()) {return false;};
@@ -47,19 +80,19 @@ bool W1temp::measure(void) {
 }
 
 //temperature returns the temperature, ready is set to true if the measurement is valid
-bool W1temp::temperature(struct measurement *temperature) {
-  while(::millis() - tstart < millis); //wait at least millis - DETECT CLOCK ROLLOVER
-  if (!thermo.reset()) {return false;} //wake up device - should always get a pulse
+float W1temp::temperature() {
+  //  while(::millis() - tstart < millis); //wait at least millis - DETECT CLOCK ROLLOVER
+  if (!thermo.reset()) {return NAN;} //wake up device - should always get a pulse
   thermo.select(w1addr);
   thermo.write(0xBE); //read scratchpad
   
   byte data[12];
   for (byte i = 0; i < 9; i++) { data[i] = thermo.read(); } // we need 9 bytes 
   if (OneWire::crc8(data, 8) != data[8]) { return false; }
-  tempC(data, temperature); 
+  return tempC(data); 
 }
 
-void W1temp::tempC(byte data[12], struct measurement *temperature) {
+float W1temp::tempC(byte data[12]) {
   int16_t raw = (data[1] << 8) | data[0];
   byte cfg = (data[4] & 0x60);
   // at lower res, the low bits are undefined, so let's zero them
@@ -67,7 +100,6 @@ void W1temp::tempC(byte data[12], struct measurement *temperature) {
   else if (cfg == 0x20) raw = raw & ~3; // 10 bit res, 187.5 ms
   else if (cfg == 0x40) raw = raw & ~1; // 11 bit res, 375 ms
   //// default is 12 bit resolution, 750 ms conversion time
-  temperature->a = (float)raw / 16.0;
-  temperature->b = temperature->a * 1.8 + 32.0;
+  return (float) raw / 16.0;
 }
 

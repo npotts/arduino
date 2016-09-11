@@ -32,7 +32,7 @@ private:
     byte w1addr[8]; //temp address
     OneWire thermo;
     uint16_t tstart; //this will eventually roll over...
-    void tempC(byte data[12], struct measurement *temperature);
+    float tempC(byte data[12]);
     
 public:
     /*Initiate a 1Wire temperature sensor attached to pin, as a device in the specified family. If twowire  
@@ -41,13 +41,16 @@ public:
     W1temp(uint8_t pin, uint8_t family, int twowire=0, int min_millis=750): pin(pin), family(family), millis(min_millis), thermo(pin), twowire(twowire) {}
     
     //locate searches for a W1temp item, and returns true if one is found
-    bool locate(void); //returns true if a sensor from family is found
+    bool locate(unsigned int skip=0); //returns true if a sensor from family is found
+
+    //setAddress sets the address to use in liu of locateFirst
+    bool setAddress(byte addr[8]);
 
     //measure starts measuring a temperature - returning false if it encountered errors (eg, 1wire device removed)
     bool measure(void);
 
     /*temperature returns true if the measurement worked, and the value written to temperature. 
      * if false is written, you need to call measure before you recall temperature() */
-    bool temperature(struct measurement *temperature);
+    float temperature();
 };
 

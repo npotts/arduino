@@ -36,7 +36,8 @@ struct measurement readRH() {
   rtn.a = rh.readHumidity();
   if (rtn.a == 998) {
     rh.begin();
-    Serial.println("rh failed");
+    rtn.a = NAN;
+    return rtn;
   }
   rtn.b = rh.readTemperature();
   return rtn;
@@ -61,8 +62,7 @@ struct measurement readBatt() {
 }
 
 struct measurement readTemp() {
-  struct measurement rtn = {NAN, NAN};
-  thermometer.temperature(&rtn);
+  struct measurement rtn = {thermometer1.temperature(), thermometer2.temperature()};
   return rtn;
 }
 
@@ -70,19 +70,17 @@ struct measurement readTemp() {
 uint32_t index = 0;
 void json() {
   Serial.print("{\"index\":"); Serial.print(index++);
-  printoutJson("temperature", "fahrenheit", readTemp);
   printoutJson("pressure", "ptemp", readP);
   printoutJson("rh", "rhtemp", readRH);
-  printoutJson("vphoton", "ref", readPhoton);
-  printoutJson("battery", "vref", readBatt);
+//  printoutJson("vphoton", "ref", readPhoton);
+//  printoutJson("battery", "vref", readBatt);
+  printoutJson("temperature_a", "temperature_b", readTemp);
   Serial.println("}");
 }
-
 
 void csv() {
   Serial.print(index++);
   printoutCsv(readTemp);
-  printoutCsv(readP);
   printoutCsv(readP);
   printoutCsv(readRH);
   printoutCsv(readPhoton);
