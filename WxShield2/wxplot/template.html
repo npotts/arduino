@@ -16,9 +16,9 @@
 </head>
 
 <body>
-    <div style="width:75%;">
-        <canvas id="canvas"></canvas>
-    </div>
+    <div style="width:75%;"><canvas id="pcanvas"></canvas></div>
+    <div style="width:75%;"><canvas id="tcanvas"></canvas></div>
+    <div style="width:75%;"><canvas id="hcanvas"></canvas></div>
     <br>
     <br>
     <button id="randomizeData">Randomize Data</button>
@@ -37,34 +37,13 @@
             return 'rgba(' + randomColorFactor() + ',' + randomColorFactor() + ',' + randomColorFactor() + ',' + (opacity || '.3') + ')';
         }
 
-        function newDate(days) {
-            return moment().add(days, 'd').toDate();
-        }
-
-        function newDateString(days) {
-            return moment().add(days, 'd').format();
-        }
-
         var config = {
             type: 'line',
-            data: {
-                datasets: [{
-                    label: "Dataset with string point data",
-                    data: [{
-                        x: moment("2016-09-11 21:26:52.001082"),
-                        y: 1.0
-                    }, {
-                        x: moment("2016-09-11 22:26:49.694226"),
-                        y: 2.0
-                    }],
-                    fill: true
-                }]
-            },
             options: {
                 responsive: true,
                 title:{
                     display:true,
-                    text:"Chart.js Time Point Data"
+                    text:"Temperatures"
                 },
                 scales: {
                     xAxes: [{
@@ -72,30 +51,50 @@
                         display: true,
                         scaleLabel: {
                             display: true,
-                            labelString: 'Date'
+                            labelString: 'Sample Time'
                         }
                     }],
                     yAxes: [{
                         display: true,
                         scaleLabel: {
                             display: true,
-                            labelString: 'value'
+                            labelString: 'Degrees (C)'
                         }
                     }]
                 }
+            },
+            data: {
+                datasets: [
+                    { label: "Temp A", fill: false, borderColor: 'rgba(255,0,0,1.0)', backgroundColor: 'rgba(255,0,0,0.8)', pointBorderColor: "rgba(255,0,0,0.8)", pointBackgroundColor: "rgba(255,0,0,0.8)", pointBorderWidth: 1, data: [{x: moment("2016-09-12 00:59:20.382798"), y: 21.4375 },{x: moment("2016-09-12 00:59:22.110672"), y: 21.375 },{x: moment("2016-09-12 00:59:23.891282"), y: 21.375 },]},
+                    // {label: "Pressure", data: [
+                    //      {x: moment("2016-09-12 00:59:20.382798"), y: 840.25 },{x: moment("2016-09-12 00:59:22.110672"), y: 840.277526 },{x: moment("2016-09-12 00:59:23.891282"), y: 840.297485 },
+                    // ]},
+
+        //             borderColor = '#red';
+        // backgroundColor = randomColor(0.5);
+        // pointBorderColor = randomColor(0.7);
+        // pointBackgroundColor = randomColor(0.5);
+        // pointBorderWidth = 1;
+                    
+                    // {label: "Temp B", fill: false,  data: [{x: moment("2016-09-12 00:59:20.382798"), y: 21.375 },{x: moment("2016-09-12 00:59:22.110672"), y: 21.4375 },{x: moment("2016-09-12 00:59:23.891282"), y: 21.375 },]},
+                    // {label: "Humidity", fill: false,  data: [{x: moment("2016-09-12 00:59:20.382798"), y: 56.263488 },{x: moment("2016-09-12 00:59:22.110672"), y: 56.210083 },{x: moment("2016-09-12 00:59:23.891282"), y: 56.141418 },]},
+                    // {label: "PTemp", fill: false,  data: [{x: moment("2016-09-12 00:59:20.382798"), y: 19.3125 },{x: moment("2016-09-12 00:59:22.110672"), y: 19.375 },{x: moment("2016-09-12 00:59:23.891282"), y: 19.375 },]},
+                    // {label: "HTemp", fill: false,  data: [{x: moment("2016-09-12 00:59:20.382798"), y: 21.511772 },{x: moment("2016-09-12 00:59:22.110672"), y: 21.522499 },{x: moment("2016-09-12 00:59:23.891282"), y: 21.543952 },]},
+                    // {label: "Humidity",  fill: false, data: [{x: moment("2016-09-12 00:59:20.382798"), y: 21.375 },{x: moment("2016-09-12 00:59:22.110672"), y: 21.4375 },{x: moment("2016-09-12 00:59:23.891282"), y: 21.375 },]}
+                ]
             }
         };
 
-        $.each(config.data.datasets, function(i, dataset) {
-            dataset.borderColor = randomColor(0.4);
-            dataset.backgroundColor = randomColor(0.5);
-            dataset.pointBorderColor = randomColor(0.7);
-            dataset.pointBackgroundColor = randomColor(0.5);
-            dataset.pointBorderWidth = 1;
-        });
+        // $.each(config.data.datasets, function(i, dataset) {
+        //     dataset.borderColor = "red";
+        //     dataset.backgroundColor = 'rgba(255,0,0,.8)';
+        //     dataset.pointBorderColor = "blue";
+        //     dataset.pointBackgroundColor = "orange";
+        //     dataset.pointBorderWidth = 1;
+        // });
 
         window.onload = function() {
-            var ctx = document.getElementById("canvas").getContext("2d");
+            var ctx = document.getElementById("pcanvas").getContext("2d");
             window.myLine = new Chart(ctx, config);
 
         };

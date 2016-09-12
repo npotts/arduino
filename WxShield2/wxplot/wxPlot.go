@@ -38,4 +38,5 @@ func (p PlotUtil) Hourly() {
 	fmt.Println(len(data))
 	fmt.Println(data[0])
 	fmt.Println(data[len(data)-1:])
+	fmt.Println(data.plotworthy("yippee"))
 }
