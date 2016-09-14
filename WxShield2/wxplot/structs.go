@@ -124,12 +124,12 @@ func (f *frames) Temps() string {
 
 /*Returend a rendered Java script for the Humidity data*/
 func (f *frames) Humidity() string {
-	return f.stringizeThis("hconfig", "Temperatures", "Degrees (C)", []singlePlot{
+	return f.stringizeThis("hconfig", "Humidity", "Relative Humidity", []singlePlot{
 		singlePlot{
 			Fieldname: "Humidity",
 			Label:     "Humidity",
-			Solid:     "rgba(255,0,0,1.0)",
-			Opaque:    "rgba(255,0,0,0.8)",
+			Solid:     "rgba(0, 255, 255,1.0)",
+			Opaque:    "rgba(0, 255, 255,0.8)",
 			Frames:    *f,
 		},
 	})
@@ -137,12 +137,12 @@ func (f *frames) Humidity() string {
 
 /*Returend a rendered js for the pressure data*/
 func (f *frames) Pressure() string {
-	return f.stringizeThis("pconfig", "Temperatures", "Degrees (C)", []singlePlot{
+	return f.stringizeThis("pconfig", "Pressure", "mbar", []singlePlot{
 		singlePlot{
 			Fieldname: "Pressure",
 			Label:     "Pressure",
-			Solid:     "rgba(255,0,0,1.0)",
-			Opaque:    "rgba(255,0,0,0.8)",
+			Solid:     "rgba(2153, 102, 255,1.0)",
+			Opaque:    "rgba(153, 102, 255,0.8)",
 			Frames:    *f,
 		},
 	})
@@ -175,9 +175,17 @@ var htmlTmpl = `
     {{range .Data}}{{.}}
     {{end}}
 
-    window.onload = function() { var ctx = document.getElementById("pcanvas").getContext("2d"); window.myLine = new Chart(ctx, pconfig); };
-    window.onload = function() { var ctx = document.getElementById("tcanvas").getContext("2d"); window.myLine = new Chart(ctx, tconfig); };
-    window.onload = function() { var ctx = document.getElementById("hcanvas").getContext("2d"); window.myLine = new Chart(ctx, hconfig); };
+    window.onload = function() {
+        var ctxa = document.getElementById("pcanvas").getContext("2d");
+        window.myLine = new Chart(ctxa, pconfig);
+
+        var ctxb = document.getElementById("tcanvas").getContext("2d");
+        window.myLine = new Chart(ctxb, tconfig);
+
+        var ctxc = document.getElementById("hcanvas").getContext("2d");
+        window.myLine = new Chart(ctxc, hconfig);
+
+    };
 
 </script>
 </body>

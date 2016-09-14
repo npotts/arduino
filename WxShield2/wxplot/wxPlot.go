@@ -29,15 +29,18 @@ func (p *PlotUtil) databyRange(start, end time.Time) (f frames, err error) {
 	return
 }
 
-//Hourly geerates 24-hour
+/*Hourly geerates 24-hour plots that start at midnight the day before now and end at midnight*/
 func (p PlotUtil) Hourly() {
 	end := time.Now()
-	start := end.Add(-2 * time.Minute)
+	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.Local)
 	data, _ := p.databyRange(start, end)
-	fmt.Println(data.html("Wala"))
-	// fmt.Println(err)
-	// fmt.Println(len(data))
-	// fmt.Println(data[0])
-	// fmt.Println(data[len(data)-1:])
-	// fmt.Println(data.plotworthy("yippee"))
+	fmt.Println(data.html("Daily"))
+}
+
+/*Weekly generates 7-day plots*/
+func (p PlotUtil) Weekly() {
+	end := time.Now()
+	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, nil)
+	data, _ := p.databyRange(start, end)
+	fmt.Println(data.html("Daily"))
 }
