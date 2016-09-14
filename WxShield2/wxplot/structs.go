@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"html/template"
+	"text/template"
+	// "html/template"
 	"time"
 )
 
@@ -31,7 +32,18 @@ type singlePlot struct {
 	Frames    frames
 }
 
-var singlePlotTmpl = `{ label: "{{.Label}}", fill: false, borderColor: '{{.Solid}}', backgroundColor: '{{.Opaque}}', pointBorderColor: "{{.Opaque}}", pointBackgroundColor: "{{.Opaque}}", pointBorderWidth: 1, data: [{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.%s.Float64}} },{{end}}]},`
+var singlePlotTmpl = `{
+                        label: "{{.Label}}",
+                        fill: false,
+                        borderColor: "{{.Solid}}",
+                        backgroundColor: "{{.Opaque}}",
+                        pointBorderColor: "{{.Opaque}}",
+                        pointBackgroundColor: "{{.Opaque}}",
+                        pointBorderWidth: 1,
+                        data: [{{range .Frames}}
+                            {x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.%s.Float64}}},{{end}}
+                        ]
+                    }`
 
 type plotConfig struct {
 	Varname string
@@ -41,7 +53,7 @@ type plotConfig struct {
 }
 
 var plotConfigTmpl = `var {{.Varname}} = {
-            type: 'line',
+            type: "line",
             options: {
                 responsive: true,
                 title:{
@@ -61,33 +73,18 @@ var plotConfigTmpl = `var {{.Varname}} = {
                         display: true,
                         scaleLabel: {
                             display: true,
-                            labelString: "{{.YUnits}}""
+                            labelString: "{{.YUnits}}"
                         }
                     }]
                 }
             },
             data: {
-            	datasets: [
-            		{{range .Data }}{{.}},{{end}}
+                datasets: [
+                    {{range .Data }}{{.}},{{end}}
                 ]
             }
         };
 `
-
-// var datasetTmpl = `{{.Variable}}: {
-// 	datasets: [
-
-// 		// {label: "Pressure", data: [
-// 		// 	{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.Pressure.Float64}} },{{end}}
-// 		// ]},
-// 		{label: "Temp A", fill: false,  data: [{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.Tempa.Float64}} },{{end}}]},
-// 		{label: "Temp B", fill: false,  data: [{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.Tempb.Float64}} },{{end}}]},
-// 		{label: "Humidity", fill: false,  data: [{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.Humidity.Float64}} },{{end}}]},
-// 		{label: "PTemp", fill: false,  data: [{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.PTemp.Float64}} },{{end}}]},
-// 		{label: "HTemp", fill: false,  data: [{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.HTemp.Float64}} },{{end}}]},
-// 		{label: "Humidity", fill: false, data: [{{range .Frames}}{x: moment("{{.Timestamp.Format "2006-01-02 15:04:05.999999"}}"), y: {{.Tempb.Float64}} },{{end}}]}
-// 	]
-// }`
 
 /*getRendered turnes a bunch of templates and data fields specified by a singleplot into an array of properly encoded HTML*/
 func (f *frames) getRendered(plots []singlePlot) (r []string) {
@@ -100,37 +97,107 @@ func (f *frames) getRendered(plots []singlePlot) (r []string) {
 	return
 }
 
-/*plotworthy converts data from the native structures to stuff that can be shoved into a file
-<var>: {
-	datasets: [{
-	    label: <label>"Dataset with string point data",
-	    data: [{
-	        x: moment("2016-09-11 21:26:52.001082"),
-	        y: 1.0
-	    }, {
-	        x: moment("2016-09-11 22:26:49.694226"),
-	        y: 2.0
-	    }],
-	    fill: true
-	}]
-*/
-func (f *frames) plotworthy(variable string) string {
-	plots := []singlePlot{
-		singlePlot{Fieldname: "Tempa", Label: "Temperature 'A'", Solid: "rgba(255,0,0,1.0)", Opaque: "rgba(255,0,0,0.8)", Frames: *f},
-		singlePlot{Fieldname: "Tempb", Label: "Temperature 'B'", Solid: "rgba(255,50,0,1.0)", Opaque: "rgba(255,50,0,0.8)", Frames: *f},
-		singlePlot{Fieldname: "PTemp", Label: "T_pressure", Solid: "rgba(0,0,255,1.0)", Opaque: "rgba(0,0,255,0.8)", Frames: *f},
-		singlePlot{Fieldname: "HTemp", Label: "T_humidity", Solid: "rgba(0,255,0,1.0)", Opaque: "rgba(0,255,0,0.8)", Frames: *f},
-	}
-
+func (f *frames) stringizeThis(variable, title, yunits string, plots []singlePlot) string {
 	bigplots := plotConfig{
-		Varname: "tconfig",
-		Title:   "Temperatures",
-		YUnits:  "Degrees (C)",
+		Varname: variable,
+		Title:   title,
+		YUnits:  yunits,
 		Data:    f.getRendered(plots),
 	}
-
 	tmpl := template.Must(template.New("").Parse(plotConfigTmpl))
 	buf := &bytes.Buffer{}
 	fmt.Println(tmpl.Execute(buf, &bigplots))
+	return buf.String()
+
+}
+
+/*Returend a rendered Java script for the Temps across the data*/
+func (f *frames) Temps() string {
+	plots := []singlePlot{
+		singlePlot{Fieldname: "Tempa", Label: "Temperature A", Solid: "rgba(255,0,0,1.0)", Opaque: "rgba(255,0,0,0.8)", Frames: *f},
+		singlePlot{Fieldname: "Tempb", Label: "Temperature B", Solid: "rgba(255,50,0,1.0)", Opaque: "rgba(255,50,0,0.8)", Frames: *f},
+		singlePlot{Fieldname: "PTemp", Label: "T_pressure", Solid: "rgba(0,0,255,1.0)", Opaque: "rgba(0,0,255,0.8)", Frames: *f},
+		singlePlot{Fieldname: "HTemp", Label: "T_humidity", Solid: "rgba(0,255,0,1.0)", Opaque: "rgba(0,255,0,0.8)", Frames: *f},
+	}
+	return f.stringizeThis("tconfig", "Temperatures", "Degrees (C)", plots)
+}
+
+/*Returend a rendered Java script for the Humidity data*/
+func (f *frames) Humidity() string {
+	return f.stringizeThis("hconfig", "Temperatures", "Degrees (C)", []singlePlot{
+		singlePlot{
+			Fieldname: "Humidity",
+			Label:     "Humidity",
+			Solid:     "rgba(255,0,0,1.0)",
+			Opaque:    "rgba(255,0,0,0.8)",
+			Frames:    *f,
+		},
+	})
+}
+
+/*Returend a rendered js for the pressure data*/
+func (f *frames) Pressure() string {
+	return f.stringizeThis("pconfig", "Temperatures", "Degrees (C)", []singlePlot{
+		singlePlot{
+			Fieldname: "Pressure",
+			Label:     "Pressure",
+			Solid:     "rgba(255,0,0,1.0)",
+			Opaque:    "rgba(255,0,0,0.8)",
+			Frames:    *f,
+		},
+	})
+}
+
+var htmlTmpl = `
+<!doctype html>
+<html>
+
+<head>
+    <title>Weather Data::{{.Timebase}} </title>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.2.2/Chart.bundle.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <style>
+    canvas {
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+    }
+    </style>
+</head>
+
+<body>
+    <div style="width:95%;"><canvas id="pcanvas"></canvas></div>
+    <div style="width:95%;"><canvas id="tcanvas"></canvas></div>
+    <div style="width:95%;"><canvas id="hcanvas"></canvas></div>
+    <br>
+    <script>
+    {{range .Data}}{{.}}
+    {{end}}
+
+    window.onload = function() { var ctx = document.getElementById("pcanvas").getContext("2d"); window.myLine = new Chart(ctx, pconfig); };
+    window.onload = function() { var ctx = document.getElementById("tcanvas").getContext("2d"); window.myLine = new Chart(ctx, tconfig); };
+    window.onload = function() { var ctx = document.getElementById("hcanvas").getContext("2d"); window.myLine = new Chart(ctx, hconfig); };
+
+</script>
+</body>
+
+</html>
+`
+
+func (f *frames) html(timebase string) string {
+	type h struct {
+		Timebase string
+		Data     []string
+	}
+
+	hh := h{
+		Timebase: timebase,
+		Data:     []string{f.Pressure(), f.Temps(), f.Humidity()},
+	}
+
+	tmpl := template.Must(template.New("html").Parse(htmlTmpl))
+	buf := &bytes.Buffer{}
+	fmt.Println(tmpl.Execute(buf, &hh))
 	return buf.String()
 }

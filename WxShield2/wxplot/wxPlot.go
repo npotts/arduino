@@ -32,11 +32,12 @@ func (p *PlotUtil) databyRange(start, end time.Time) (f frames, err error) {
 //Hourly geerates 24-hour
 func (p PlotUtil) Hourly() {
 	end := time.Now()
-	start := end.Add(-1 * time.Hour)
-	data, err := p.databyRange(start, end)
-	fmt.Println(err)
-	fmt.Println(len(data))
-	fmt.Println(data[0])
-	fmt.Println(data[len(data)-1:])
-	fmt.Println(data.plotworthy("yippee"))
+	start := end.Add(-2 * time.Minute)
+	data, _ := p.databyRange(start, end)
+	fmt.Println(data.html("Wala"))
+	// fmt.Println(err)
+	// fmt.Println(len(data))
+	// fmt.Println(data[0])
+	// fmt.Println(data[len(data)-1:])
+	// fmt.Println(data.plotworthy("yippee"))
 }
