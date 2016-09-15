@@ -203,9 +203,8 @@ func (f *frames) html(timebase string) string {
 		Timebase: timebase,
 		Data:     []string{f.Pressure(), f.Temps(), f.Humidity()},
 	}
-
 	tmpl := template.Must(template.New("html").Parse(htmlTmpl))
 	buf := &bytes.Buffer{}
-	fmt.Println(tmpl.Execute(buf, &hh))
+	tmpl.Execute(buf, &hh)
 	return buf.String()
 }

@@ -26,27 +26,27 @@ func New(dataSourceName, database, table string) *PlotUtil {
 func (p *PlotUtil) databyRange(start, end time.Time) (f frames, err error) {
 	//find out how many samples we are dealing with
 	i, samples := 0, 750
-	if err = p.db.Select(&i, fmt.Sprintf("SELECT COUNT(*) FROM %s.%s", p.database, p.table)); err != nil {
+	if err = p.db.Get(&i, fmt.Sprintf("SELECT COUNT(*) FROM %s.%s WHERE timestamp > $1 and timestamp < $2", p.database, p.table), start, end); err != nil {
 		return
 	}
 	i = int(i / samples) //max of 750ish samples
 	query := fmt.Sprintf("SELECT * FROM %s.%s WHERE timestamp > $1 AND timestamp < $2  ORDER BY timestamp LIMIT %d OFFSET %d;", p.database, p.table, samples, i)
 	err = p.db.Select(&f, query, start, end)
-	return
+  return
 }
 
 /*Hourly geerates 24-hour plots that start at midnight the day before now and end at midnight*/
 func (p PlotUtil) Hourly() {
 	end := time.Now()
-	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.Local)
-	data, _ := p.databyRange(start, end)
+	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.Local).UTC()
+	data, _ := p.databyRange(start.UTC(), end)
 	fmt.Println(data.html("Daily"))
 }
 
 /*Weekly generates 7-day plots*/
 func (p PlotUtil) Weekly() {
 	end := time.Now()
-	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, nil)
-	data, _ := p.databyRange(start, end)
+	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.Local).UTC()
+	data, _ := p.databyRange(start.UTC(), end)
 	fmt.Println(data.html("Daily"))
 }
