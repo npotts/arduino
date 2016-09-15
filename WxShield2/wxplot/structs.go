@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"text/template"
-	// "html/template"
 	"time"
 )
 
@@ -106,7 +105,7 @@ func (f *frames) stringizeThis(variable, title, yunits string, plots []singlePlo
 	}
 	tmpl := template.Must(template.New("").Parse(plotConfigTmpl))
 	buf := &bytes.Buffer{}
-	fmt.Println(tmpl.Execute(buf, &bigplots))
+  tmpl.Execute(buf, &bigplots)
 	return buf.String()
 
 }

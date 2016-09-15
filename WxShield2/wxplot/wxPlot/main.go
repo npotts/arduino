@@ -17,6 +17,6 @@ var (
 func main() {
 	app.Parse(os.Args[1:])
 	i := wxplot.New(*dataSourceName, *database, *raw)
-	i.Hourly()
-	// i.poll()
+	i.WriteFile("hourly.html",i.Hourly())
+	i.WriteFile("weekly.html",i.Weekly())
 }
