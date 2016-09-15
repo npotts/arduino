@@ -24,7 +24,13 @@ func New(dataSourceName, database, table string) *PlotUtil {
 }
 
 func (p *PlotUtil) databyRange(start, end time.Time) (f frames, err error) {
-	query := fmt.Sprintf("SELECT * FROM %s.%s WHERE timestamp > $1 AND timestamp < $2", p.database, p.table)
+	//find out how many samples we are dealing with
+	i, samples := 0, 750
+	if err = p.db.Select(&i, fmt.Sprintf("SELECT COUNT(*) FROM %s.%s", p.database, p.table)); err != nil {
+		return
+	}
+	i = int(i / samples) //max of 750ish samples
+	query := fmt.Sprintf("SELECT * FROM %s.%s WHERE timestamp > $1 AND timestamp < $2  ORDER BY timestamp LIMIT %d OFFSET %d;", p.database, p.table, samples, i)
 	err = p.db.Select(&f, query, start, end)
 	return
 }
