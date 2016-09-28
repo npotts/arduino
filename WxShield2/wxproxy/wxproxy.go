@@ -28,8 +28,8 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/alecthomas/kingpin"
-	_ "github.com/cockroachdb/pq"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/tarm/serial"
 	"os"
@@ -37,12 +37,11 @@ import (
 )
 
 var (
-	create = "CREATE TABLE IF NOT EXISTS %s.%s  (id SERIAL, timestamp TIMESTAMP DEFAULT now(), pressure FLOAT, tempa FLOAT, tempb FLOAT, humidity FLOAT, ptemp FLOAT, htemp FLOAT, battery FLOAT, indx INT)"
+	create = "CREATE TABLE IF NOT EXISTS %s (id SERIAL, timestamp TIMESTAMP DEFAULT now(), pressure FLOAT, tempa FLOAT, tempb FLOAT, humidity FLOAT, ptemp FLOAT, htemp FLOAT, battery FLOAT, indx INT)"
 
 	app            = kingpin.New("wxProxy", "Shovel data from an arduino into a postgres/cockroachdb")
-	dataSourceName = app.Flag("dataSource", "Where should we connect to and yelp at (usually a string like 'postgresql://root@dataserver:26257?sslmode=disable')").Short('s').Default("postgresql://root@chipmunk:26257?sslmode=disable").String()
-	database       = app.Flag("database", "The database to aim at").Short('d').Default("wx").String()
-	raw            = app.Flag("table", "The database table to fire into").Short('t').Default("raw").String()
+	dataSourceName = app.Flag("dataSource", "Where should we connect to and yelp at (usually a string like 'postgres://user:password@server/database?sslmode=disable')").Short('s').Default("postgres://wx:wx@pika/wx?sslmode=disable").String()
+	table          = app.Flag("table", "The database table to fire into").Short('t').Default("raw").String()
 	device         = app.Flag("device", "The RS232 serial device to read from (at 57600 baud)").Short('D').Default("/dev/ttyUSB0").String()
 )
 
@@ -68,7 +67,7 @@ func new() *inserter {
 
 //poll forever will look for newlines and assume whatever it got was a full on SQL query worthy of executing.
 func (ins *inserter) poll() {
-	ins.db.MustExec(fmt.Sprintf(create, *database, *raw))
+	ins.db.MustExec(fmt.Sprintf(create, *table))
 	rdr := bufio.NewReader(ins.ser)
 	lines := 0
 	for {
@@ -85,8 +84,9 @@ func (ins *inserter) poll() {
 }
 
 func (ins *inserter) insert(data string) {
-	data = fmt.Sprintf(data, *database, *raw)
+	data = fmt.Sprintf(data, *table)
 	if _, err := ins.db.Exec(data); err != nil {
+		fmt.Println(data)
 		fmt.Println(errors.Wrap(err, "Unable to insert"))
 		return
 	}
