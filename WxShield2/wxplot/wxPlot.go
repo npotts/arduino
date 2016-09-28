@@ -40,16 +40,15 @@ type PlotUtil struct {
 }
 
 /*New returns a created PlotUtil or panics trying*/
-func New(dataSourceName, database, table string) *PlotUtil {
+func New(dataSourceName, table string) *PlotUtil {
 	return &PlotUtil{
-		db:       sqlx.MustConnect("postgres", dataSourceName),
-		database: database,
-		table:    table,
+		db:    sqlx.MustConnect("postgres", dataSourceName),
+		table: table,
 	}
 }
 
 func (p *PlotUtil) databyRange(start, end time.Time) (f frames, err error) {
-	query := fmt.Sprintf("SELECT * FROM %s.%s WHERE timestamp > $1 AND timestamp < $2  ORDER BY timestamp", p.database, p.table)
+	query := fmt.Sprintf("SELECT * FROM %s WHERE timestamp > $1 AND timestamp < $2  ORDER BY timestamp", p.table)
 	if err = p.db.Select(&f, query, start, end); err != nil {
 		return frames{}, err
 	}
@@ -85,8 +84,7 @@ func (p PlotUtil) Weekly() string {
 /*Monthly generates Calandar month plots*/
 func (p PlotUtil) Monthly() string {
 	end := time.Now().UTC().Local()
-	start := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
-	start = start.Add(-24 * time.Duration(end.Weekday()) * time.Hour)
+	start := time.Date(end.Year(), end.Month(), 1, 0, 0, 0, 0, end.Location())
 	data, _ := p.databyRange(start.UTC(), end.UTC())
 	return data.html("Monthy")
 }
