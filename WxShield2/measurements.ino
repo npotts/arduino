@@ -66,7 +66,7 @@ void niceSql(float val) {
 }
 
 void sqlinsert(struct frame frame) {
-  Serial.print("INSERT INTO %s.%s (indx, pressure, tempa, tempb, humidity, ptemp, htemp, battery) VALUES (");
+  Serial.print("INSERT INTO %s (indx, pressure, tempa, tempb, humidity, ptemp, htemp, battery) VALUES (");
   Serial.print(frame.index);
   niceSql(frame.pressure);
   niceSql(frame.tempA);
