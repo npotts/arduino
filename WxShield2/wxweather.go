@@ -34,16 +34,28 @@ import (
 
 /*Packet is a single sample made in time*/
 type Packet struct {
-	ID        uint64          `sql:"id" json:"id"`
-	Timestamp time.Time       `sql:"timestamp" json:"timestamp"`
-	Pressure  sql.NullFloat64 `sql:"pressure" json:"pressure"`
-	Tempa     sql.NullFloat64 `sql:"tempa" json:"tempa"`
-	Tempb     sql.NullFloat64 `sql:"tempb" json:"tempb"`
-	Humidity  sql.NullFloat64 `sql:"humidity" json:"humidity"`
-	PTemp     sql.NullFloat64 `sql:"ptemp" json:"ptemp"`
-	HTemp     sql.NullFloat64 `sql:"htemp" json:"htemp"`
-	Battery   sql.NullFloat64 `sql:"battery" json:"battery"`
-	Indx      int             `sql:"indx" json:"indx"`
+	ID        uint64          `sql:"-"`
+	Timestamp time.Time       `sql:"timestamp"`
+	Pressure  sql.NullFloat64 `sql:"pressure"`
+	Tempa     sql.NullFloat64 `sql:"tempa"`
+	Tempb     sql.NullFloat64 `sql:"tempb"`
+	Humidity  sql.NullFloat64 `sql:"humidity"`
+	PTemp     sql.NullFloat64 `sql:"ptemp"`
+	HTemp     sql.NullFloat64 `sql:"htemp"`
+	Battery   sql.NullFloat64 `sql:"battery"`
+	Indx      int             `sql:"indx"`
+}
+
+/*jsonPacket is a json encodable packet*/
+type jsonPacket struct {
+	Pressure *float64 `json:"pressure"`
+	Tempa    *float64 `json:"tempa"`
+	Tempb    *float64 `json:"tempb"`
+	Humidity *float64 `json:"humidity"`
+	PTemp    *float64 `json:"ptemp"`
+	HTemp    *float64 `json:"htemp"`
+	Battery  *float64 `json:"battery"`
+	Indx     *int     `json:"indx"`
 }
 
 /*tags returns the tags used in the packet structure*/
@@ -52,15 +64,32 @@ func (p Packet) tags() []string {
 	s := reflect.ValueOf(&p).Elem()
 	typeof := s.Type()
 	for i := 0; i < s.NumField(); i++ {
-		r = append(r, typeof.Field(i).Tag.Get("sql"))
+		if t := typeof.Field(i).Tag.Get("sql"); t != "-" {
+			r = append(r, t)
+		}
 	}
 	return r
+}
+
+/*Jsonable returns a structure that can be written to via json*/
+func (p *Packet) Jsonable() *jsonPacket {
+	p.Pressure.Valid, p.Tempa.Valid, p.Tempb.Valid, p.Humidity.Valid, p.PTemp.Valid, p.HTemp.Valid, p.Battery.Valid = true, true, true, true, true, true, true
+	return &jsonPacket{
+		Pressure: &p.Pressure.Float64,
+		Tempa:    &p.Tempa.Float64,
+		Tempb:    &p.Tempb.Float64,
+		Humidity: &p.Humidity.Float64,
+		PTemp:    &p.PTemp.Float64,
+		HTemp:    &p.HTemp.Float64,
+		Battery:  &p.Battery.Float64,
+		Indx:     &p.Indx,
+	}
 }
 
 /*InsertEroteme uses the sqlite/postgres ? placeholder*/
 func (p Packet) InsertEroteme(table string) string {
 	tags := p.tags()
-	return fmt.Sprintf("INSERT (%s) INTO %s (?%s)", strings.Join(tags, ", "), table, strings.Repeat(", ?", len(tags)-1))
+	return fmt.Sprintf("INSERT INTO %s (%s) VALUES (?%s)", table, strings.Join(tags, ", "), strings.Repeat(", ?", len(tags)-1))
 }
 
 /*InsertNamed returns a named SQL query to insert named values*/
@@ -69,5 +98,5 @@ func (p Packet) InsertNamed(table string) string {
 	for _, tag := range tags {
 		named = append(named, fmt.Sprintf(":%s", tag))
 	}
-	return fmt.Sprintf("INSERT (%s) INTO %s (?%s)", strings.Join(tags, ", "), table, strings.Join(named, ", "))
+	return fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)", table, strings.Join(tags, ", "), strings.Join(named, ", "))
 }

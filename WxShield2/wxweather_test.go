@@ -30,7 +30,7 @@ import (
 
 func TestPacket_InsertEroteme(t *testing.T) {
 	n := Packet{}
-	want := `INSERT (id, timestamp, pressure, tempa, tempb, humidity, ptemp, htemp, battery, indx) INTO test (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	want := `INSERT INTO test (timestamp, pressure, tempa, tempb, humidity, ptemp, htemp, battery, indx) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	if n.InsertEroteme("test") != want {
 		t.Errorf("Got %q not %q", n.InsertEroteme("test"), want)
 	}
@@ -38,8 +38,16 @@ func TestPacket_InsertEroteme(t *testing.T) {
 
 func TestPacket_InsertNamed(t *testing.T) {
 	n := Packet{}
-	want := `INSERT (id, timestamp, pressure, tempa, tempb, humidity, ptemp, htemp, battery, indx) INTO test (?:id, :timestamp, :pressure, :tempa, :tempb, :humidity, :ptemp, :htemp, :battery, :indx)`
+	want := `INSERT INTO test (timestamp, pressure, tempa, tempb, humidity, ptemp, htemp, battery, indx) VALUES (:timestamp, :pressure, :tempa, :tempb, :humidity, :ptemp, :htemp, :battery, :indx)`
 	if n.InsertNamed("test") != want {
 		t.Errorf("Got %q not %q", n.InsertNamed("test"), want)
+	}
+}
+
+func TestPacket_Jsonable(t *testing.T) {
+	n := Packet{}
+	*n.Jsonable().Battery = 1.0
+	if n.Battery.Float64 != 1.0 {
+		t.Errorf("Should be able to set values")
 	}
 }
