@@ -26,14 +26,16 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"github.com/alecthomas/kingpin"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/tarm/serial"
 	"os"
-	"strings"
+
+	_ "github.com/lib/pq"
+	"github.com/npotts/arduino/WxShield2"
 )
 
 var (
@@ -51,10 +53,13 @@ type inserter struct {
 }
 
 func getPort() *serial.Port {
+	fmt.Printf("Attempting to open %s: ", *device)
 	port, err := serial.OpenPort(&serial.Config{Name: *device, Baud: 57600, Size: 8, Parity: serial.ParityNone, StopBits: 1})
 	if err != nil {
-		panic(errors.Wrap(err, "Unable to open serial device"))
+		fmt.Println(errors.Wrap(err, "Unable to open serial device"))
+		os.Exit(1)
 	}
+	fmt.Println("done")
 	return port
 }
 
@@ -70,24 +75,28 @@ func (ins *inserter) poll() {
 	ins.db.MustExec(fmt.Sprintf(create, *table))
 	rdr := bufio.NewReader(ins.ser)
 	lines := 0
+	fmt.Println("Entering Polling Loop")
 	for {
-		line, err := rdr.ReadString('\n')
+		line, err := rdr.ReadBytes('\n')
 		if err != nil {
 			fmt.Println(err)
+			continue
 		}
-		lines++
-		fmt.Printf("%d lines ingested\r", lines)
-		if strings.Contains(line, "INSERT INTO") {
-			go ins.insert(line)
+		packet := &wxshield2.Packet{}
+		err = json.Unmarshal(line, packet.Jsonable())
+		if err == nil {
+			go ins.insert(*packet)
+			lines++
+			fmt.Printf("\r%d lines ingested", lines)
 		}
 	}
 }
 
-func (ins *inserter) insert(data string) {
-	data = fmt.Sprintf(data, *table)
-	if _, err := ins.db.Exec(data); err != nil {
-		fmt.Println(data)
-		fmt.Println(errors.Wrap(err, "Unable to insert"))
+/*insert exec*/
+func (ins *inserter) insert(packet wxshield2.Packet) {
+	sql := packet.InsertNamed(*table)
+	if _, err := ins.db.NamedExec(sql, packet); err != nil {
+		fmt.Println(errors.Wrapf(err, "Unable to insert: %q", sql))
 		return
 	}
 }
