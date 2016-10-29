@@ -24,7 +24,7 @@ SOFTWARE.
 */
 
 #include <SimpleDHT.h>
-#include <ArduinoJson.h>
+
 
 
 SimpleDHT11 dht11;
