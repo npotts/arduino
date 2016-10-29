@@ -46,8 +46,8 @@ void tmeasure() {
 
 /*ReadTemps fetches the values from the temp sensors*/
 void ReadTemps(JsonObject& obj) {
-  obj["temperature1"] = thermometer1.temperature();
-  obj["temperature2"] = thermometer2.temperature();
+  obj["temperature_ext"] = thermometer1.temperature();
+  obj["temperature"] = thermometer2.temperature();
 }
 
 void ReadSystem(JsonObject& obj) {
