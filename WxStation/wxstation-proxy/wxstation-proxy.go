@@ -79,6 +79,7 @@ func do(method string, line []byte) bool {
 }
 
 var first = true
+var count = 0
 
 func monitor() {
 	port := getPort()
@@ -89,7 +90,10 @@ func monitor() {
 			if first {
 				first = !do("PUT", line)
 			}
-			do("POST", line)
+			if do("POST", line) {
+				count++
+				fmt.Printf("\r%d", count)
+			}
 		}
 	}
 }
