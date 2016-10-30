@@ -46,9 +46,9 @@ void tmeasure() {
 
 /*ReadTemps fetches the values from the temp sensors*/
 void ReadTemps(JsonObject& obj) {
-  obj["temperature_ext"] = thermometer1.temperature();
+  obj["temperatureExt"] = thermometer1.temperature();
   obj["temperature"] = thermometer2.temperature();
-}
+} 
 
 void ReadSystem(JsonObject& obj) {
   float vref = 3.3 / analogRead(REFERENCE_3V3); //read the reference 3.3V signal to get the full-scale value
@@ -74,8 +74,6 @@ void waitFor(long int start, long int atleast) {
     if (now - start > atleast) return;
   }
 }
-
-
 
 void loop() {
   StaticJsonBuffer<256> jsonBuffer; //json buffer
