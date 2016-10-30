@@ -34,30 +34,30 @@ bool W1temp::locate(unsigned int skip) {
   
   while (true) { //prod through
     if (!thermo.search(w1addr)) {
-      Serial.println("-- Unable to search for devices");
+      // Serial.println("-- Unable to search for devices");
       return false;
     }
     if (skip == 0) {
       break;
     }
-    Serial.print("-- Skipping #"); Serial.print(skip); Serial.print(" ");
+    // Serial.print("-- Skipping #"); Serial.print(skip); Serial.print(" ");
     for(byte i = 0; i<8; i++) {
-      Serial.print(w1addr[i], HEX);
+      // Serial.print(w1addr[i], HEX);
     }
-    Serial.println();
+    // Serial.println();
     skip--;
   }
 
 //  if (!thermo.search(w1addr)) { return false; }
-  Serial.print("-- Found sensor at ");
+  // Serial.print("-- Found sensor at ");
   for(byte i = 0; i<8; i++) {
-    Serial.print(w1addr[i], HEX);
+    // Serial.print(w1addr[i], HEX);
   }
   if (OneWire::crc8(w1addr, 7) != w1addr[7]) {
-      Serial.println(". CRC invalid!");
+      // Serial.println(". CRC invalid!");
       return false;
   }
-  Serial.println("");
+  // Serial.println("");
   return true;
 }
  
