@@ -40,7 +40,7 @@ import (
 )
 
 var (
-	app    = kingpin.New("wxstation-proxy", "Shovel data coming from an arduino configured as a WxStation to a brianiac instance")
+	app    = kingpin.New("WxStation", "Shovel data coming from an arduino configured as a WxStation to a brianiac instance")
 	baud   = app.Flag("baud", "The baud rate to listen at.  Default is the compiled in baud rate").Short('b').Default("115200").Int()
 	device = app.Arg("device", "The RS232 serial device connected to the Arduino running WxStation (http://github.com/npotts/arduino/WxStation)").Required().String()
 	table  = app.Arg("table", "The database table to fire into").Required().String()

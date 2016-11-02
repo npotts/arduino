@@ -1,8 +1,13 @@
 # Purpose
 I want to know what the temperature is outside
 
-# Schematic
+# Components
 
+  - Sparkfun [Redboard](https://www.sparkfun.com/products/12757)
+  - Sparkfun [Weather Shield](https://www.sparkfun.com/products/12081)
+  - Made in China [DHT11](https://www.amazon.com/Digital-Humidity-Temperature-Sensor-Arudino/dp/B007YE0SB6)
+  - [DHT11](https://www.amazon.com/Digital-Humidity-Temperature-Sensor-Arudino/dp/B007YE0SB6)
+  - [DS18B20](https://www.amazon.com/DS18B20-Waterproof-Temperature-Sensors-Thermistor/dp/B01JKVRVNI) in a 'outdoor' package
 
 # Parameters
 The following parameters are recorded and stored.  Missing, or invalid, values are thrown away:
