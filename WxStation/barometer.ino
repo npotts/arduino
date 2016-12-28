@@ -32,15 +32,15 @@ void InitMPL3115A2() { /*Setup Barometer*/
   barometer.enableEventFlags();
 }
 
-/*ReadDH11 writes out DHT11 values to a serial port. On errors, it writes out nothing*/
+/*ReadMPL3115A2 writes out DHT11 values to a serial port. On errors, it writes out nothing*/
 void ReadMPL3115A2(JsonObject& obj) {
   float reading = barometer.readPressure() / 100.00;
   if (reading != -999.0) {
-    obj["pressure"] = reading;
+    obj["pressure"] = double_with_n_digits(reading, 10);
   }
 
   reading = barometer.readTemp();
   if (reading != -999.0) {
-    obj["pressureTemp"] = reading;
+    obj["pressureTemp"] = double_with_n_digits(reading, 10);
   }
 }

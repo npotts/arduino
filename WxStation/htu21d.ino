@@ -33,11 +33,11 @@ void ReadHTU21D(JsonObject& obj) {
   if (reading == 998)
     rh.begin();
   else
-    obj["ihumidity"] = reading;
+    obj["ihumidity"] = double_with_n_digits(reading, 10);
   
   reading = rh.readTemperature();
   if (reading == 998)
     rh.begin();
   else
-    obj["ihumidityTemp"] = reading;
+    obj["ihumidityTemp"] =  double_with_n_digits(reading, 10);
 }

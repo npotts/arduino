@@ -46,15 +46,15 @@ void tmeasure() {
 
 /*ReadTemps fetches the values from the temp sensors*/
 void ReadTemps(JsonObject& obj) {
-  obj["temperatureExt"] = thermometer1.temperature();
-  obj["temperature"] = thermometer2.temperature();
+  obj["temperatureExt"] = double_with_n_digits(thermometer1.temperature(),10);
+  obj["temperature"] = double_with_n_digits(thermometer2.temperature(), 10);
 } 
 
 void ReadSystem(JsonObject& obj) {
   float vref = 3.3 / analogRead(REFERENCE_3V3); //read the reference 3.3V signal to get the full-scale value
   float battery = analogRead(BATT) * vref * 4.90; // Battery voltage is in voltage divider: (3.9k+1k)/1k
-  obj["vref"] = vref;
-  obj["battery"] = battery;
+  obj["vref"] = double_with_n_digits(vref, 5);
+  obj["battery"] = double_with_n_digits(battery, 5);
 }
 
 void setup() {
