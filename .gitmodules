@@ -1,3 +1,12 @@
 [submodule "vendor/ArduinoJson"]
 	path = vendor/ArduinoJson
 	url = https://github.com/bblanchon/ArduinoJson
+[submodule "vendor/MPL3115A2"]
+	path = vendor/MPL3115A2
+	url = https://github.com/sparkfun/SparkFun_MPL3115A2_Breakout_Arduino_Library
+[submodule "vendor/HTU21D"]
+	path = vendor/HTU21D
+	url = https://github.com/sparkfun/SparkFun_HTU21D_Breakout_Arduino_Library
+[submodule "vendor/SimpleDHT"]
+	path = vendor/SimpleDHT
+	url = https://github.com/winlinvip/SimpleDHT
