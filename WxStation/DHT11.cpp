@@ -27,7 +27,7 @@ SOFTWARE.
 /*ReadDH11 writes out DHT11 values to a serial port. On errors, it writes out nothing*/
 void ReadDH11(JsonObject &jobj) {
   byte temperature, humidity;
-  if (dht11.read(2, &temperature, &humidity, NULL)) { return 0; }
+  if (dht11.read(2, &temperature, &humidity, NULL)) { return;  }
   jobj["humidity"] = double_with_n_digits(humidity, 10);
   jobj["humidityTemp"] = double_with_n_digits(temperature, 10);
 }
