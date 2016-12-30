@@ -11,7 +11,8 @@ MONITOR_BAUDRATE  = 115200
 AVR_TOOLS_DIR     = /usr
 
 AVRDDUDE          = /usr/bin/avrdude    # Path to avrdude directory.
-CPPFLAGS          = -pedantic -Wall -Wextra
+#CPPFLAGS          = -pedantic -Wall -Wextra -std=c++11
+CPPFLAGS          = -Wall -std=c++11
 ARDUINO_LIBS      = Wire OneWire ArduinoJson MPL3115A2/src HTU21D/src SimpleDHT
 
 MONITOR_PORT      = /dev/tty.USB*
