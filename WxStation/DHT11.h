@@ -23,6 +23,8 @@ SOFTWARE.
 */
 
 #pragma once
+
+#include <ArduinoJson.h>
 #include <SimpleDHT.h>
 
 
