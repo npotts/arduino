@@ -112,7 +112,7 @@ func monitor() {
 }
 
 func plot() {
-	now := time.Now().UTC()
+	now := time.Now().UTC().Add(-2 * 24 * time.Hour)
 	file, err := os.Create(*output)
 	if err != nil {
 		panic(err)
@@ -132,16 +132,16 @@ func plot() {
 	tp := plots.NewTimePlot("Title", "Previous Hours", "Temp / RH")
 
 	for key, color := range map[string]color.RGBA{
-		"battery":       color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"humidity":      color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"humiditytemp":  color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"ihumidity":     color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"ihumiditytemp": color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		"battery": color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "humidity":      color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "humiditytemp":  color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "ihumidity":     color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "ihumiditytemp": color.RGBA{R: 255, G: 255, B: 255, A: 255},
 		// "pressure":       color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"pressuretemp":   color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"temperature":    color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"temperatureext": color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		"vref":           color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "pressuretemp":   color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "temperature":    color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "temperatureext": color.RGBA{R: 255, G: 255, B: 255, A: 255},
+		// "vref":           color.RGBA{R: 255, G: 255, B: 255, A: 255},
 	} {
 		tp.AddTrace(plots.Trace{Data: data.XYs(key, now), Color: color})
 	}
@@ -149,16 +149,6 @@ func plot() {
 	if err := tp.WriteTo(file, 5*vg.Inch, 3*vg.Inch, "svg"); err != nil {
 		panic(err)
 	}
-
-	// write := func(format, filename string) {
-
-	// }
-
-	// tp.WriteTo(w, width, height, format)
-
-	// fmt.Printf("Len(data)=%d\n", len(data))
-
-	// data.XYs(field)
 }
 
 func main() {
