@@ -29,7 +29,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alecthomas/kingpin"
-<<<<<<< HEAD
 	"github.com/pkg/errors"
 	"github.com/tarm/serial"
 	"os"
@@ -46,37 +45,6 @@ var (
 	user     = app.Flag("user", "The database table to fire into").Short('u').Default("wxstation").String()
 	password = app.Flag("password", "The database table to fire into").Short('p').Default("wxstation").String()
 	influxdb = app.Flag("influx", `URL to Influx DB instance.  Usually this is something like 'http://server:8086', but may be somewhere else.`).Default("http://pika:8086").String()
-=======
-	"github.com/gonum/plot/vg"
-	"github.com/jmoiron/sqlx"
-	"github.com/npotts/arduino/WxStation/plots"
-	"github.com/npotts/homehub"
-	"github.com/pkg/errors"
-	"github.com/tarm/serial"
-	"image/color"
-	"net/http"
-	"os"
-	"strings"
-	"time"
-
-	_ "github.com/go-sql-driver/mysql" //mysql support
-	_ "github.com/lib/pq"              //postgres support
-	_ "github.com/mattn/go-sqlite3"    //sqlite3  support
-)
-
-var (
-	app    = kingpin.New("WxStation", "Shovel data coming from an arduino configured as a WxStation to a brianiac instance")
-	table  = app.Flag("table", "The database table to fire into (daemon mode) or read from (plot)").Default("wxstation").Short('t').String()
-	daemon = app.Command("demon", "Operate in Daemon mode - shovel RS232 data to brainiac instance")
-	baud   = daemon.Flag("baud", "The baud rate to listen at.  Default is the compiled in baud rate").Short('b').Default("115200").Int()
-	device = daemon.Arg("device", "The RS232 serial device connected to the Arduino running WxStation (http://github.com/npotts/arduino/WxStation)").Required().String()
-	url    = daemon.Arg("url", "URL to brainaic instance").Required().URL()
-
-	plotc  = app.Command("plot", "Generate plots of data")
-	driver = plotc.Flag("driver", "Database driver.  Supported drivers are mysql, postgresql, and sqlite3").Default("mysql").Short('d').String()
-	dsn    = plotc.Flag("dsn", "DSN / Dial string").Default("brainiac:brainiac@/brainiac?parseTime=true&loc=UTC").Short('D').String()
-	output = plotc.Arg("svg", "Path to SVG output file").Default("trh.svg").String()
->>>>>>> 7541c30f22118e39dfc18507265d409abfa59b05
 )
 
 func getPort() *serial.Port {
@@ -153,61 +121,10 @@ func monitor() {
 	}
 }
 
-func plot() {
-	now := time.Now().UTC().Add(-2 * 24 * time.Hour)
-	file, err := os.Create(*output)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-
-	sq, err := sqlx.Open(*driver, *dsn)
-	if err != nil {
-		panic(err)
-	}
-	defer sq.Close()
-	data := plots.Measurements{}
-	if e := sq.Select(&data, "SELECT * FROM "+*table); e != nil {
-		panic(e)
-	}
-
-	tp := plots.NewTimePlot("Title", "Previous Hours", "Temp / RH")
-
-	for key, color := range map[string]color.RGBA{
-		"battery": color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "humidity":      color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "humiditytemp":  color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "ihumidity":     color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "ihumiditytemp": color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "pressure":       color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "pressuretemp":   color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "temperature":    color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "temperatureext": color.RGBA{R: 255, G: 255, B: 255, A: 255},
-		// "vref":           color.RGBA{R: 255, G: 255, B: 255, A: 255},
-	} {
-		tp.AddTrace(plots.Trace{Data: data.XYs(key, now), Color: color})
-	}
-
-	if err := tp.WriteTo(file, 5*vg.Inch, 3*vg.Inch, "svg"); err != nil {
-		panic(err)
-	}
-}
-
 func main() {
-<<<<<<< HEAD
 	app.Parse(os.Args[1:])
 	// c := getClient()
 	// fmt.Println(writeLine([]byte(`{"vref":0.00,"battery":4.37,"humidity":29,"humidityTemp":1,"pressure":842.40,"pressureTemp":-2.13,"ihumidity":55.05,"ihumidityTemp":0.09,"temperatureExt":-5.13,"temperature":-5.00}`), c))
 
 	monitor()
-=======
-	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
-	case daemon.FullCommand():
-		monitor()
-	case plotc.FullCommand():
-		plot()
-
-	}
-
->>>>>>> 7541c30f22118e39dfc18507265d409abfa59b05
 }
