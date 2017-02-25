@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2016 Nick Potts
+Copyright (c) 2016-2017 Nick Potts
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -29,22 +29,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/alecthomas/kingpin"
-	"github.com/npotts/homehub"
 	"github.com/pkg/errors"
 	"github.com/tarm/serial"
-	"net/http"
 	"os"
-	"strings"
+	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 var (
-	app    = kingpin.New("WxStation", "Shovel data coming from an arduino configured as a WxStation to a brianiac instance")
-	baud   = app.Flag("baud", "The baud rate to listen at.  Default is the compiled in baud rate").Short('b').Default("115200").Int()
-	device = app.Arg("device", "The RS232 serial device connected to the Arduino running WxStation (http://github.com/npotts/arduino/WxStation)").Required().String()
-	table  = app.Arg("table", "The database table to fire into").Required().String()
-	url    = app.Arg("url", "URL to brainaic instance").Required().URL()
+	app      = kingpin.New("WxStation2", "Shovel data coming from an arduino configured as a WxStation into a InfluxDB instance")
+	baud     = app.Flag("baud", "The baud rate to listen at.  Default is the compiled in baud rate").Short('b').Default("115200").Int()
+	device   = app.Flag("device", "The RS232 serial device connected to the Arduino running WxStation (http://github.com/npotts/arduino/WxStation)").Default("/dev/ttyUSB0").String()
+	db       = app.Flag("table", "The database to fire into").Short('t').Default("wx").String()
+	user     = app.Flag("user", "The database table to fire into").Short('u').Default("wxstation").String()
+	password = app.Flag("password", "The database table to fire into").Short('p').Default("wxstation").String()
+	influxdb = app.Flag("influx", `URL to Influx DB instance.  Usually this is something like 'http://server:8086', but may be somewhere else.`).Default("http://pika:8086").String()
 )
 
 func getPort() *serial.Port {
@@ -58,41 +58,64 @@ func getPort() *serial.Port {
 	return port
 }
 
-func do(method string, line []byte) bool {
-	x := homehub.Datam{}
-	data := fmt.Sprintf(`{"table":%q,"data":%s}`, *table, strings.Replace(strings.Replace(string(line), "\n", "", -1), "\r", "", -1))
-	err := json.Unmarshal([]byte(data), &x)
+func getClient() client.Client {
+	fmt.Printf("Attempting to connect to influx db instance: ")
+	c, err := client.NewHTTPClient(client.HTTPConfig{
+		Addr:               *influxdb,
+		Username:           *user,
+		Password:           *password,
+		UserAgent:          "WxStations2/arduino",
+		Timeout:            0,
+		InsecureSkipVerify: false,
+	})
 	if err != nil {
-		return false
+		fmt.Println(err)
+		os.Exit(2)
 	}
-
-	if req, err := http.NewRequest(method, (*url).String(), strings.NewReader(data)); err == nil {
-		client := http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println("Error: ", resp)
-			return false
-		}
-		return (resp.StatusCode == http.StatusOK)
-	}
-	return false
+	return c
 }
 
-var first = true
 var count = 0
 
+func writeLine(line []byte, c client.Client) error {
+	m := map[string]interface{}{"count": count}
+
+	if err := json.Unmarshal(line, &m); err != nil {
+		return fmt.Errorf("Unpack error: %v: %v", string(line), err)
+	}
+
+	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
+		Precision: "us",
+		Database:  *db,
+	})
+
+	if err != nil {
+		return fmt.Errorf("Unable to form BatchPoints: %v", err)
+	}
+
+	pt, err := client.NewPoint("sample", map[string]string{}, m) //use servers timestamp
+	// pt, err := client.NewPoint("sample", map[string]string{}, m, time.Now())
+	if err != nil {
+		return fmt.Errorf("Unable to create point: %v", err)
+	}
+
+	bp.AddPoint(pt)
+	count++
+	return c.Write(bp)
+}
+
 func monitor() {
+
 	port := getPort()
+	defer port.Close()
+	ic := getClient()
+	defer ic.Close()
 	rdr := bufio.NewReader(port)
 	for {
 		line, err := rdr.ReadBytes('\r')
 		if err == nil {
-			if first {
-				first = !do("PUT", line)
-			}
-			if do("POST", line) {
-				count++
-				fmt.Printf("\r%d", count)
+			if e := writeLine(line, ic); e != nil {
+				fmt.Println(e)
 			}
 		}
 	}
@@ -100,5 +123,8 @@ func monitor() {
 
 func main() {
 	app.Parse(os.Args[1:])
+	// c := getClient()
+	// fmt.Println(writeLine([]byte(`{"vref":0.00,"battery":4.37,"humidity":29,"humidityTemp":1,"pressure":842.40,"pressureTemp":-2.13,"ihumidity":55.05,"ihumidityTemp":0.09,"temperatureExt":-5.13,"temperature":-5.00}`), c))
+
 	monitor()
 }
