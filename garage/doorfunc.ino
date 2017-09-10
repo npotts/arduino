@@ -2,7 +2,6 @@
 
 /*triggerRelay triggers the relay for some time*/
 void triggerRelay() {
-  Serial.println("btnsmsh");
   digitalWrite(RelayPin, RelaySet);
   delay(RelayDur);
   digitalWrite(RelayPin, RelayIdle);

@@ -27,7 +27,7 @@ unsigned int pdelta = DoorAtFloor - DoorAtCeiling;
 
 //Pin Values
 #define A2DPin A0
-#define RelayPin 8 
+#define RelayPin 13 
 #define RelayDur 300  //300ms
 #define RelayIdle LOW //Idling should be low
 #define RelaySet HIGH //when set, should set the pin high
