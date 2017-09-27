@@ -12,8 +12,8 @@ DoorAtFloor and DoorAtCeiling instruct this firmware the range the door should o
 ---Ground---|  <--- DoorAtFloow value
 
 */
-#define DoorAtFloor 200 //A2D values lower than this mean the door is closed
-#define DoorAtCeiling 700 //A2D values greater than this mean the door is closed
+#define DoorAtFloor 165 //A2D values lower than this mean the door is closed
+#define DoorAtCeiling 878 //A2D values greater than this mean the door is closed
 #define A2DJitter 5 // How many counts +/- from a value do we consider as 'the same'.  THis is effectively your noise
 
 //Don't alter the following - It is used to pick the right strategy

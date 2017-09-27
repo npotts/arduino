@@ -43,7 +43,7 @@ Motion DoorMotion() {
   unsigned int then = pos; //capture value now
   delay(MotionWait);
   updatePos();
-  bool increasing = (pos > then);
+  bool increasing = (pos < then);
   if (same(then, pos)) return Stopped;
   if ( (PosIncreaseOpensDoor && increasing) || (!PosIncreaseOpensDoor && !increasing)) return MovingUp;
   return MovingDown;
