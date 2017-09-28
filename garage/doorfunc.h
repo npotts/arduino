@@ -46,3 +46,5 @@ bool optimize(int, unsigned long, bool (*)(void), void (*)(void), void (*)(void)
 bool openDoor();
 bool closeDoor();
 int percentOpen(unsigned int);
+
+unsigned int averagePosition(unsigned char );

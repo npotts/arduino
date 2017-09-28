@@ -23,8 +23,10 @@ SOFTWARE.
 */
 
 #pragma once
+#include "hwcfg.h"
 #include "doorfunc.h"
 
 void cmd_status();
 void cmd_movement();
 void cmd_proc();
+void cmd_calibrate();

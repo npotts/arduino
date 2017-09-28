@@ -47,7 +47,7 @@ void cmd_status() {
 
 
 void cmd_help() {
-  Serial.print("This is the idiotic garage door opener. I speak the following ASCII\n"
+  Serial.print(F("This is the idiotic garage door opener. I speak the following ASCII\n"
   "?\trequest the following CSV formed info:\n"
   "\t\tmillis\n"
   "\t\tpos raw A/D count\n"
@@ -61,7 +61,8 @@ void cmd_help() {
   "c\tAttempt to Close Door\n"
   "o\tAttempt to Open Door\n"
   "m\tDoor Movement info\n"
-  );
+  "~\tPerform a Door-Calibration.  Make sure the door is closed and wait.  This could take a long time.  | symbols are used to detect motion, * means stopped.  AFter cal is complete, it writes values to EEPROM and resumes normal operations\n"  
+  ));
 }
 
 /*cmd_proc takes one of the following single ASCII character
@@ -108,6 +109,9 @@ void cmd_proc() {
           case MovingDown: Serial.println("moving down"); break;
         }
         break;
+      case '~':
+        cmd_calibrate();
+        break;
       case 'h':
         cont = false;
         cmd_help();
@@ -119,3 +123,45 @@ void cmd_proc() {
     Serial.println(Prompt);
   }
 }
+
+/*cmd_calibrate performs a calibration of the garage door.  It expects 
+the door to be closed initially, and then does the following:
+
+- Measures 16 samoples at the currrent position (closed)
+- Smashes the button
+- Waits until the M command responds with "stopped"  5 times
+- Measures 16 samples at the currrent position (open)
+- Writes values to the EEPROM
+- Resets Device
+
+
+*/
+void cmd_calibrate() {
+  int count = 0;
+  Serial.print("Cal> ");
+  unsigned int floor = averagePosition(4);
+  Serial.print("Floor:"); Serial.print(floor);
+  triggerRelay(); delay(2000); //trigger button and wait 2s for door to start
+  Serial.print(" {");
+  while (true) {
+    switch(DoorMotion()) {
+      case Stopped:
+        Serial.print("*");
+        count++;
+        break;
+      default:
+        Serial.print("|");
+        count = 0;
+        break;
+    }
+    delay(300); //wait another 200ms
+    if (count >= 5) break; //motor isnt moving
+  }
+  Serial.print("} Stopped. ");
+  unsigned int ceiling = averagePosition(4);
+  Serial.print("Ceiling:"); Serial.print(ceiling);
+  writePositionValues(floor, ceiling);
+  init_readPositionValues();
+  Serial.print(" Done\n");
+}
+

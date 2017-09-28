@@ -127,3 +127,13 @@ int percentOpen(unsigned int npos) {
   partial /= pdelta;
   return partial;
 }
+
+
+unsigned int averagePosition(unsigned char powerOfTwoTimes ) {
+  unsigned long long int summer;
+  int max = 1 << powerOfTwoTimes;
+  for(int i = 0; i<max; i++)
+    summer += analogRead(A2DPin);
+  return summer >> powerOfTwoTimes;
+}
+

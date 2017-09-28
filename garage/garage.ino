@@ -33,6 +33,7 @@ and a simple IO line that drives a relay. based on some commands.
 
 void setup() {
   Serial.begin(115200);
+  init_fixup();
   analogReference(DEFAULT);
   pinMode(RelayPin, OUTPUT);
   digitalWrite(RelayPin, RelayIdle);

@@ -23,6 +23,8 @@ SOFTWARE.
 */
 
 #pragma once
+
+#include <EEPROM.h>
 /*
 # Diagram
 
@@ -36,18 +38,18 @@ DoorAtFloor and DoorAtCeiling instruct this firmware the range the door should o
 ---Ground---|  <--- DoorAtFloow value
 
 */
-#define DoorAtFloor 165 //A2D values lower than this mean the door is closed
-#define DoorAtCeiling 878 //A2D values greater than this mean the door is closed
+
+#define EEPROMSTART 0 //startign address of EEPROM
+unsigned int DoorAtFloor; //A2D values lower than this mean the door is closed
+unsigned int DoorAtCeiling; //A2D values greater than this mean the door is closed
 #define A2DJitter 5 // How many counts +/- from a value do we consider as 'the same'.  THis is effectively your noise
 
-//Don't alter the following - It is used to pick the right strategy
-#if DoorAtCeiling > DoorAtFloor
-#define PosIncreaseOpensDoor true
-unsigned int pdelta = DoorAtCeiling - DoorAtFloor;
-#else
-#define PosIncreaseOpensDoor false
-unsigned int pdelta = DoorAtFloor - DoorAtCeiling;
-#endif
+bool PosIncreaseOpensDoor;
+unsigned int pdelta;
+unsigned int init_fixup(); //fixup should alter pdelta and PosIncreaseOpensDoor
+void init_readPositionValues(); //reads from flash the values of DoorAtFloor and DoorAtCeiling
+void writePositionValues(unsigned int, unsigned int); //write floor and ceiling values
+
 
 //Pin Values
 #define A2DPin A0
