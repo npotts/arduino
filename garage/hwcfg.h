@@ -51,7 +51,7 @@ void writePositionValues(unsigned int, unsigned int); //write floor and ceiling 
 
 //Pin Values
 #define A2DPin A0
-#define RelayPin 13
+#define RelayPin 12
 #define RelayDur 300  //300ms
 #define RelayIdle LOW //Idling should be low
 #define RelaySet HIGH //when set, should set the pin high

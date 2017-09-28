@@ -91,12 +91,12 @@ bool optimize(int loopdelay, unsigned long duration, bool (*exitCond)(void), voi
 }
 bool openDoor() {
   //every 500ms, for 30000ms, exit if wideOpen, smashing the button if going down, or stopped
-  return optimize(2000, 90000, &wideOpen, &triggerRelay, &updatePos, &triggerRelay);
+  return optimize(2000, 90000, &wideOpen, &triggerRelay, &updatePos, &updatePos);
 }
 
 bool closeDoor() {
   //every 500ms, for 30000ms, exit if isClosed(), smashing the button if going up, or stopped
-  return optimize(2000, 90000, &isClosed, &triggerRelay, &triggerRelay, &updatePos);
+  return optimize(2000, 90000, &isClosed, &triggerRelay, &updatePos, &updatePos);
 }
 
 /*this returns a number, from 0 to 100 that reperesents the open state of the door.
