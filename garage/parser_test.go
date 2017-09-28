@@ -94,7 +94,7 @@ func TestStatus_Parse(t *testing.T) {
 
 func TestNewParser(t *testing.T) {
 	if !testing.Short() {
-		t.Skip("Not cehcking hardware")
+		t.Skip("Not checking hardware")
 		t.SkipNow()
 	}
 	s, err := NewParser("serial:///dev/cu.usbserial-A6004nZq:115200")

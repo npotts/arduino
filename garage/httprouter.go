@@ -82,7 +82,9 @@ func (d *Daemon) run() {
 /*Run starts the server*/
 func (d *Daemon) Run() error {
 	d.run()
-	return d.svr.ListenAndServe()
+	err := d.svr.ListenAndServe()
+	fmt.Printf("Server Error: %v\n", err)
+	return err
 }
 
 /*NewDaemon returns an intialized daemon instance, or panics*/
@@ -98,8 +100,13 @@ func NewDaemon(closeAfter, closeBefore, device string, baud, webport int) *Daemo
 	panicif(err1)
 
 	//open Parser
-	p, err2 := NewParser(fmt.Sprintf("serial://%s:%d", device, baud))
+	port := fmt.Sprintf("serial://%s:%d", device, baud)
+	p, err2 := NewParser(port)
+	fmt.Println(port, "opened")
 	panicif(err2)
+	// Waiting because when opening arduino, it gets reset and take
+	// some time to wake
+	<-time.After(2 * time.Second)
 
 	m := mux.NewRouter()
 
@@ -128,5 +135,6 @@ func NewDaemon(closeAfter, closeBefore, device string, baud, webport int) *Daemo
 	m.HandleFunc("/{*.html}", d.html).Methods("GET")
 	m.HandleFunc("/{*.htm}", d.html).Methods("GET")
 	m.HandleFunc("/", d.html).Methods("GET")
+
 	return d
 }

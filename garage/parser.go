@@ -50,7 +50,7 @@ var (
 	}
 	cstatus = arbiter.Command{
 		Name:          "Status",
-		Timeout:       500 * time.Millisecond,
+		Timeout:       100 * time.Millisecond,
 		Prototype:     "?",
 		CommandRegexp: regexp.MustCompile("\\?"),
 		Response:      regexp.MustCompile("[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*\r\n"),
@@ -62,7 +62,7 @@ var (
 		Timeout:       2 * time.Minute,
 		Prototype:     "~",
 		CommandRegexp: regexp.MustCompile("~"),
-		Response:      regexp.MustCompile("[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*\r\n"),
+		Response:      regexp.MustCompile(".*\n"),
 		Error:         nil,
 		Description:   "Get status",
 	}
@@ -89,7 +89,7 @@ var (
 		Timeout:       10 * time.Second,
 		Prototype:     "^",
 		CommandRegexp: regexp.MustCompile("^"),
-		Response:      regexp.MustCompile("Pushing button\n"),
+		Response:      regexp.MustCompile("Pushing button"),
 		Error:         nil,
 		Description:   "Toggles the door",
 	}
@@ -193,11 +193,18 @@ func (p *Parser) Next() (rtn *Status, err error) {
 	return nil, e
 }
 
+func (p *Parser) noCache(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate") // HTTP 1.1.
+	w.Header().Set("Pragma", "no-cache")                                   // HTTP 1.0.
+	w.Header().Set("Expires", "0")
+}
+
 /*Status polls for the next status message and returns the JSON equivalent of it*/
 func (p *Parser) Status(w http.ResponseWriter, r *http.Request) {
+	p.noCache(w, r)
+	defer r.Body.Close()
 	s, e := p.Next()
 	if e == nil {
-		w.WriteHeader(http.StatusOK)
 		b, _ := json.Marshal(s)
 		w.WriteHeader(http.StatusOK)
 		w.Write(b)
@@ -209,10 +216,12 @@ func (p *Parser) Status(w http.ResponseWriter, r *http.Request) {
 
 /*OpenDoor Opens the doore*/
 func (p *Parser) OpenDoor(w http.ResponseWriter, r *http.Request) {
+	p.noCache(w, r)
+	defer r.Body.Close()
 	go func() {
 		_, e := p.issue(open)
 		if e != nil {
-			fmt.Println("Error Opening Door: ", e)
+			fmt.Println("Error opening Door: ", e)
 		}
 	}()
 	w.WriteHeader(http.StatusNoContent)
@@ -220,6 +229,8 @@ func (p *Parser) OpenDoor(w http.ResponseWriter, r *http.Request) {
 
 /*CloseDoor closes the doore*/
 func (p *Parser) CloseDoor(w http.ResponseWriter, r *http.Request) {
+	p.noCache(w, r)
+	defer r.Body.Close()
 	go func() {
 		_, e := p.issue(close)
 		if e != nil {
@@ -231,17 +242,22 @@ func (p *Parser) CloseDoor(w http.ResponseWriter, r *http.Request) {
 
 /*Recal issues a recal*/
 func (p *Parser) Recal(w http.ResponseWriter, r *http.Request) {
+	p.noCache(w, r)
+	defer r.Body.Close()
 	go func() {
-		_, e := p.issue(recal)
+		data, e := p.issue(recal)
 		if e != nil {
 			fmt.Println("Error issuing recal: ", e)
 		}
+		fmt.Println("Recad Results: ", string(data))
 	}()
 	w.WriteHeader(http.StatusNoContent)
 }
 
 /*Button punches the button*/
 func (p *Parser) Button(w http.ResponseWriter, r *http.Request) {
+	p.noCache(w, r)
+	defer r.Body.Close()
 	go func() {
 		_, e := p.issue(toggle)
 		if e != nil {
