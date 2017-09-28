@@ -25,6 +25,7 @@ SOFTWARE.
 package garage
 
 import (
+	"context"
 	"fmt"
 	"testing"
 )
@@ -97,7 +98,7 @@ func TestNewParser(t *testing.T) {
 		t.Skip("Not checking hardware")
 		t.SkipNow()
 	}
-	s, err := NewParser("serial:///dev/cu.usbserial-A6004nZq:115200")
+	s, err := NewParser(context.Background(), "serial:///dev/cu.usbserial-A6004nZq:115200")
 	if err != nil {
 		t.Errorf("Unable to dial: %v", err)
 		t.FailNow()

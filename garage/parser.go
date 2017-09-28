@@ -26,6 +26,7 @@ package garage
 
 import (
 	"bytes"
+	"context"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -39,60 +40,12 @@ import (
 )
 
 var (
-	alwaysSuccess = arbiter.Command{
-		Name:          "Always succeeds",
-		Timeout:       1000 * time.Millisecond,
-		Prototype:     "",
-		CommandRegexp: regexp.MustCompile(".*"),
-		Response:      regexp.MustCompile(".*"),
-		Error:         nil,
-		Description:   "Always succeeds",
-	}
-	cstatus = arbiter.Command{
-		Name:          "Status",
-		Timeout:       100 * time.Millisecond,
-		Prototype:     "?",
-		CommandRegexp: regexp.MustCompile("\\?"),
-		Response:      regexp.MustCompile("[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*\r\n"),
-		Error:         nil,
-		Description:   "Get status",
-	}
-	recal = arbiter.Command{
-		Name:          "Recal",
-		Timeout:       2 * time.Minute,
-		Prototype:     "~",
-		CommandRegexp: regexp.MustCompile("~"),
-		Response:      regexp.MustCompile(".*\n"),
-		Error:         nil,
-		Description:   "Get status",
-	}
-	open = arbiter.Command{
-		Name:          "Open Door",
-		Timeout:       20 * time.Second,
-		Prototype:     "o",
-		CommandRegexp: regexp.MustCompile("o"),
-		Response:      regexp.MustCompile("opened"),
-		Error:         regexp.MustCompile("nope"),
-		Description:   "Opens the Door",
-	}
-	close = arbiter.Command{
-		Name:          "Close Door",
-		Timeout:       20 * time.Second,
-		Prototype:     "c",
-		CommandRegexp: regexp.MustCompile("c"),
-		Response:      regexp.MustCompile("closed"),
-		Error:         regexp.MustCompile("nope"),
-		Description:   "Closes the door",
-	}
-	toggle = arbiter.Command{
-		Name:          "Toggle Button",
-		Timeout:       10 * time.Second,
-		Prototype:     "^",
-		CommandRegexp: regexp.MustCompile("^"),
-		Response:      regexp.MustCompile("Pushing button"),
-		Error:         nil,
-		Description:   "Toggles the door",
-	}
+	alwaysSuccess = arbiter.Command{Name: "Always succeeds", Timeout: 1000 * time.Millisecond, Prototype: "", CommandRegexp: regexp.MustCompile(".*"), Response: regexp.MustCompile(".*"), Error: nil, Description: "Always succeeds"}
+	cstatus       = arbiter.Command{Name: "Status", Timeout: 100 * time.Millisecond, Prototype: "?", CommandRegexp: regexp.MustCompile("\\?"), Response: regexp.MustCompile("[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*\r\n"), Error: nil, Description: "Get status"}
+	recal         = arbiter.Command{Name: "Recal", Timeout: 2 * time.Minute, Prototype: "~", CommandRegexp: regexp.MustCompile("~"), Response: regexp.MustCompile(".*\n"), Error: nil, Description: "Get status"}
+	open          = arbiter.Command{Name: "Open Door", Timeout: 20 * time.Second, Prototype: "o", CommandRegexp: regexp.MustCompile("o"), Response: regexp.MustCompile("opened"), Error: regexp.MustCompile("nope"), Description: "Opens the Door"}
+	closeDoor     = arbiter.Command{Name: "Close Door", Timeout: 20 * time.Second, Prototype: "c", CommandRegexp: regexp.MustCompile("c"), Response: regexp.MustCompile("closeDoord"), Error: regexp.MustCompile("nope"), Description: "Closes the door"}
+	toggle        = arbiter.Command{Name: "Toggle Button", Timeout: 10 * time.Second, Prototype: "^", CommandRegexp: regexp.MustCompile("^"), Response: regexp.MustCompile("Pushing button"), Error: nil, Description: "Toggles the door"}
 )
 
 /*Status is the message the garage door emits*/
@@ -102,7 +55,7 @@ type Status struct {
 	FloorADC    uint64 `json:"floor_adc"`    //16bits
 	CeilingADC  uint64 `json:"ceiling_adc"`  //16bits
 	PercentOpen uint64 `json:"percent_open"` //8bits
-	Closed      bool   `json:"closed"`
+	Closed      bool   `json:"closeDoord"`
 	FullyOpen   bool   `json:"fully_open"`
 }
 
@@ -164,33 +117,82 @@ func (s Status) String() string {
 }
 
 /*NewParser returns a new parsers after openening the arbiter*/
-func NewParser(dial string) (*Parser, error) {
+func NewParser(ctx context.Context, dial string) (*Parser, error) {
+	nctx, cancel := context.WithCancel(ctx)
 	arb, err := arbiter.OpenArbiter(dial, 1000*time.Millisecond, alwaysSuccess)
-	return &Parser{dev: arb}, err
+	return &Parser{
+		ctx:  nctx,
+		cncl: cancel,
+		dev:  arb,
+		last: &Status{},
+	}, err
 }
 
 /*Parser wraps around the arduino and provides a simple way to get status
 and perform limited control on a garage door opener*/
 type Parser struct {
-	mux sync.Mutex
-	dev arbiter.Arbiter
+	ctx    context.Context
+	cncl   context.CancelFunc
+	devmux sync.RWMutex
+	dev    arbiter.Arbiter
+	smux   sync.RWMutex
+	last   *Status
+}
+
+/*Start initializes the background sampling routine*/
+func (p *Parser) Start() {
+	defer p.dev.Close()
+	go func() {
+		select {
+		case <-p.ctx.Done():
+			return //exit and quit
+		case <-time.After(100 * time.Millisecond):
+		}
+
+		if b, e := p.issue(cstatus); e == nil {
+			if cstatus.Response.Match(b) {
+				ns := &Status{}
+				if ne := ns.ParseRaw(cstatus.Response.FindSubmatch(b)[0]); ne == nil {
+					p.smux.Lock()
+					p.last = ns
+					p.smux.Unlock()
+				}
+			}
+		}
+	}()
 }
 
 func (p *Parser) issue(cmd arbiter.Command) ([]byte, error) {
-	p.mux.Lock()
-	defer p.mux.Unlock()
-	resp := p.dev.Control(cmd)
-	return resp.Bytes, resp.Error
+	p.devmux.Lock()
+	defer p.devmux.Unlock()
+
+	// ctx, cancel := context.WithTimeout(p.ctx, 300*time.Millisecond)
+	cresp := make(chan arbiter.Response, 0)
+
+	go func() {
+		select {
+		case <-p.ctx.Done(): //oh well
+			fmt.Println("Canceled", cmd.Name)
+		case cresp <- p.dev.Control(cmd): //sent!
+			fmt.Println("Success", cmd.Name)
+			// cancel()
+		}
+		close(cresp)
+	}()
+
+	select {
+	case <-p.ctx.Done(): //dying
+		return nil, p.ctx.Err()
+	case resp := <-cresp:
+		return resp.Bytes, resp.Error
+	}
 }
 
 /*Next polls the device for another status message*/
-func (p *Parser) Next() (rtn *Status, err error) {
-	b, e := p.issue(cstatus)
-	if e == nil {
-		rtn = &Status{}
-		return rtn, rtn.ParseRaw(cstatus.Response.FindSubmatch(b)[0])
-	}
-	return nil, e
+func (p *Parser) Next() (rtn *Status) {
+	p.smux.RLock()
+	defer p.smux.RUnlock()
+	return p.last
 }
 
 func (p *Parser) noCache(w http.ResponseWriter, _ *http.Request) {
@@ -203,15 +205,11 @@ func (p *Parser) noCache(w http.ResponseWriter, _ *http.Request) {
 func (p *Parser) Status(w http.ResponseWriter, r *http.Request) {
 	p.noCache(w, r)
 	defer r.Body.Close()
-	s, e := p.Next()
-	if e == nil {
-		b, _ := json.Marshal(s)
-		w.WriteHeader(http.StatusOK)
-		w.Write(b)
-		return
-	}
-	w.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprintf(w, "%s", e)
+	p.smux.RLock()
+	defer p.smux.RUnlock()
+	b, _ := json.Marshal(p.last)
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
 }
 
 /*OpenDoor Opens the doore*/
@@ -227,12 +225,12 @@ func (p *Parser) OpenDoor(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-/*CloseDoor closes the doore*/
+/*CloseDoor closes the door*/
 func (p *Parser) CloseDoor(w http.ResponseWriter, r *http.Request) {
 	p.noCache(w, r)
 	defer r.Body.Close()
 	go func() {
-		_, e := p.issue(close)
+		_, e := p.issue(closeDoor)
 		if e != nil {
 			fmt.Println("Error closing Door: ", e)
 		}

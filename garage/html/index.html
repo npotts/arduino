@@ -309,8 +309,6 @@ function recal() {
   console.log("Issuing Cal"); ajax = new XMLHttpRequest(); ajax.open("PATCH", "/api", true); ajax.send();
 }
 
-
-
-setInterval(guiUpdate, 500);
+setInterval(guiUpdate, 10);
 </script>
 </html>

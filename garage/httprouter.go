@@ -36,6 +36,8 @@ import (
 
 /*Daemon monitors the garage door, and stabs mice that run around*/
 type Daemon struct {
+	ctx           context.Context
+	cncl          context.CancelFunc
 	p             *Parser
 	mux           *mux.Router
 	box           *rice.Box
@@ -68,9 +70,10 @@ func (d *Daemon) run() {
 		for {
 			select {
 			case <-time.After(1 * time.Minute):
-				st, err := d.p.Next()
-				if shouldCloseDoor(d.after, d.before) && err == nil && !st.Closed {
-					d.p.issue(close)
+				st := d.p.Next()
+				if shouldCloseDoor(d.after, d.before) && !st.Closed {
+					fmt.Println("Automatically closing door")
+					d.p.issue(closeDoor)
 				}
 			case <-ctx.Done():
 				return
@@ -83,12 +86,15 @@ func (d *Daemon) run() {
 func (d *Daemon) Run() error {
 	d.run()
 	err := d.svr.ListenAndServe()
+	d.cncl() //cancel ctx chain
 	fmt.Printf("Server Error: %v\n", err)
 	return err
 }
 
 /*NewDaemon returns an intialized daemon instance, or panics*/
 func NewDaemon(closeAfter, closeBefore, device string, baud, webport int) *Daemon {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	panicif := func(err error) {
 		if err != nil {
 			panic(err)
@@ -101,7 +107,7 @@ func NewDaemon(closeAfter, closeBefore, device string, baud, webport int) *Daemo
 
 	//open Parser
 	port := fmt.Sprintf("serial://%s:%d", device, baud)
-	p, err2 := NewParser(port)
+	p, err2 := NewParser(ctx, port)
 	fmt.Println(port, "opened")
 	panicif(err2)
 	// Waiting because when opening arduino, it gets reset and take
@@ -111,9 +117,10 @@ func NewDaemon(closeAfter, closeBefore, device string, baud, webport int) *Daemo
 	m := mux.NewRouter()
 
 	d := &Daemon{
-		p:   p,
-		box: rice.MustFindBox("html"),
-		mux: m,
+		cncl: cancel,
+		p:    p,
+		box:  rice.MustFindBox("html"),
+		mux:  m,
 		svr: &http.Server{
 			Handler: m,
 			Addr:    fmt.Sprintf(":%d", webport),
