@@ -286,6 +286,7 @@ function guiUpdate() {
       if ('closed' in json && json.closed) {
         document.getElementById("notice").innerHTML = "is closed";
       }
+      // console.log(json);
     }
   }
   ajax.open("GET", "/api", true);

@@ -36,28 +36,20 @@ void updatePos() {
   pos = analogRead(A2DPin);
 }
 
-/*same returns true if a and b are both within A2Djitter */
-bool same(unsigned int a, unsigned int b) {
-  return (a > b) ? (a - b < A2DJitter) : (b - a < A2DJitter);
-}
-
 /*isClosed returns true if the door is in the 'closed' position*/
-bool isClosed() {
-  return same(pos, DoorAtFloor) ||
-    (PosIncreaseOpensDoor && pos < DoorAtFloor) ||
-    (!PosIncreaseOpensDoor && pos > DoorAtFloor);
-}
+bool isClosed() { return percentOpen(pos) < 5; }
 
 /*wideOpen returns true if the door is in the fully opened position*/
-bool wideOpen() {
-  return same(pos, DoorAtCeiling) ||
-    (PosIncreaseOpensDoor && pos > DoorAtCeiling) ||
-    (!PosIncreaseOpensDoor && pos < DoorAtCeiling);
-}
+bool wideOpen() { return percentOpen(pos) > 95; }
 
 /*isOpen returns true if the door is in any sort of 'open' position*/
 bool isOpen() {
   return !isClosed();
+}
+
+/*same returns true if a and b are both within A2Djitter */
+bool same(unsigned int a, unsigned int b) {
+  return (a > b) ? (a - b < A2DJitter) : (b - a < A2DJitter);
 }
 
 /*DoorMotion returns the guessed Motion of the door: Up, Down, or stopped.
@@ -108,26 +100,30 @@ bool closeDoor() {
 }
 
 /*this returns a number, from 0 to 100 that reperesents the open state of the door.
-0 should be understood to be 100% closed
-100 should be understood to be 100% open.
+0 should be understood to be closed
+25 should be understood to be 25% off the floor
+50 should be understood to be halfway open
+75 should be understood to be mostly open
+100 should be understood to be fully open.
 
 npos is the current ADC position of the door
 */
 int percentOpen(unsigned int npos) {
-  unsigned int partial;
+  float f = 100;
   if (PosIncreaseOpensDoor) {
-    if (npos < DoorAtFloor) return 0;
-    if (npos > DoorAtCeiling) return 100;
-    partial = 100 * (npos - DoorAtFloor);
+    if (npos >= DoorAtCeiling) return 100;
+    if (npos <= DoorAtFloor) return 0;
+    f *= (npos - DoorAtFloor);
+    f /= (DoorAtCeiling - DoorAtFloor);
+    return (unsigned int) f;
   } else {
-    if (npos > DoorAtFloor) return 0;
-    if (npos < DoorAtCeiling) return 100;
-    partial = 100 * (DoorAtFloor - npos);
+    if (npos <= DoorAtCeiling) return 100;
+    if (npos >= DoorAtFloor) return 0;
+    f *= (DoorAtFloor - npos);
+    f /= (DoorAtFloor - DoorAtCeiling);
   }
-  partial /= pdelta;
-  return partial;
+  return f;
 }
-
 
 unsigned int averagePosition(unsigned char powerOfTwoTimes ) {
   unsigned long long int summer;
@@ -136,4 +132,5 @@ unsigned int averagePosition(unsigned char powerOfTwoTimes ) {
     summer += analogRead(A2DPin);
   return summer >> powerOfTwoTimes;
 }
+
 

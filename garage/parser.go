@@ -71,8 +71,8 @@ var (
 		Timeout:       20 * time.Second,
 		Prototype:     "o",
 		CommandRegexp: regexp.MustCompile("o"),
-		Response:      regexp.MustCompile("opened\n"),
-		Error:         regexp.MustCompile("nope\n"),
+		Response:      regexp.MustCompile("opened"),
+		Error:         regexp.MustCompile("nope"),
 		Description:   "Opens the Door",
 	}
 	close = arbiter.Command{
@@ -80,8 +80,8 @@ var (
 		Timeout:       20 * time.Second,
 		Prototype:     "c",
 		CommandRegexp: regexp.MustCompile("c"),
-		Response:      regexp.MustCompile("closed\n"),
-		Error:         regexp.MustCompile("nope\n"),
+		Response:      regexp.MustCompile("closed"),
+		Error:         regexp.MustCompile("nope"),
 		Description:   "Closes the door",
 	}
 	toggle = arbiter.Command{

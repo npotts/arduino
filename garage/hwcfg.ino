@@ -24,19 +24,6 @@ SOFTWARE.
 
 #include "hwcfg.h"
 
-/*The following is stored in FLASH, and must be extracted to RAM on reset.  The
-compiled in defaults may be changed*/
-//const unsigned int storedPositions[] PROGMEM = {165, 878}; //Order: Floor, Ceiling
-
-
-///*This reads in the values stored in flash to our variables in SRAM*/
-//void init_readPositionValues() {
-//  DoorAtCeiling = (unsigned int) pgm_read_word_near(storedPositions);
-//  DoorAtFloor = (unsigned int) pgm_read_word_near(storedPositions+1);  
-//}
-
-
-
 /*use EEPROM, addres EEPROMSTART {+0,+1} is Floor, EEPROMSTART {+2,+3} is the ceiling*/
 void init_readPositionValues() {
   DoorAtFloor = (EEPROM.read(EEPROMSTART+0) << 8) + EEPROM.read(EEPROMSTART+1);;
@@ -56,5 +43,4 @@ void writePositionValues(unsigned int floor, unsigned int ceiling) {
 unsigned int init_fixup() {
   init_readPositionValues();
   PosIncreaseOpensDoor = DoorAtCeiling > DoorAtFloor;
-  pdelta = (PosIncreaseOpensDoor) ? DoorAtCeiling - DoorAtFloor :  DoorAtFloor - DoorAtCeiling;
 }

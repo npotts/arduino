@@ -38,14 +38,12 @@ DoorAtFloor and DoorAtCeiling instruct this firmware the range the door should o
 ---Ground---|  <--- DoorAtFloow value
 
 */
-
-#define EEPROMSTART 0 //startign address of EEPROM
 unsigned int DoorAtFloor; //A2D values lower than this mean the door is closed
 unsigned int DoorAtCeiling; //A2D values greater than this mean the door is closed
+#define EEPROMSTART 0 //starting address of EEPROM, where the two values measured values are stored
 #define A2DJitter 5 // How many counts +/- from a value do we consider as 'the same'.  THis is effectively your noise
 
 bool PosIncreaseOpensDoor;
-unsigned int pdelta;
 unsigned int init_fixup(); //fixup should alter pdelta and PosIncreaseOpensDoor
 void init_readPositionValues(); //reads from flash the values of DoorAtFloor and DoorAtCeiling
 void writePositionValues(unsigned int, unsigned int); //write floor and ceiling values
