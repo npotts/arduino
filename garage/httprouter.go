@@ -108,11 +108,13 @@ func NewDaemon(closeAfter, closeBefore, device string, baud, webport int) *Daemo
 	//open Parser
 	port := fmt.Sprintf("serial://%s:%d", device, baud)
 	p, err2 := NewParser(ctx, port)
-	fmt.Println(port, "opened")
 	panicif(err2)
+	fmt.Println(port, "opened")
+
 	// Waiting because when opening arduino, it gets reset and take
 	// some time to wake
 	<-time.After(2 * time.Second)
+	defer p.Start()
 
 	m := mux.NewRouter()
 

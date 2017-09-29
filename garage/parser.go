@@ -120,12 +120,13 @@ func (s Status) String() string {
 func NewParser(ctx context.Context, dial string) (*Parser, error) {
 	nctx, cancel := context.WithCancel(ctx)
 	arb, err := arbiter.OpenArbiter(dial, 1000*time.Millisecond, alwaysSuccess)
-	return &Parser{
+	p := &Parser{
 		ctx:  nctx,
 		cncl: cancel,
 		dev:  arb,
 		last: &Status{},
-	}, err
+	}
+	return p, err
 }
 
 /*Parser wraps around the arduino and provides a simple way to get status
@@ -141,21 +142,23 @@ type Parser struct {
 
 /*Start initializes the background sampling routine*/
 func (p *Parser) Start() {
-	defer p.dev.Close()
 	go func() {
-		select {
-		case <-p.ctx.Done():
-			return //exit and quit
-		case <-time.After(100 * time.Millisecond):
-		}
-
-		if b, e := p.issue(cstatus); e == nil {
-			if cstatus.Response.Match(b) {
-				ns := &Status{}
-				if ne := ns.ParseRaw(cstatus.Response.FindSubmatch(b)[0]); ne == nil {
-					p.smux.Lock()
-					p.last = ns
-					p.smux.Unlock()
+		defer p.dev.Close()
+		for {
+			select {
+			case <-p.ctx.Done():
+				return //exit and quit
+			case <-time.After(100 * time.Millisecond):
+			}
+			if b, e := p.issue(cstatus); e == nil {
+				if cstatus.Response.Match(b) {
+					ns := &Status{}
+					if ne := ns.ParseRaw(cstatus.Response.FindSubmatch(b)[0]); ne == nil {
+						p.smux.Lock()
+						p.last = ns
+						p.smux.Unlock()
+						fmt.Println(ns)
+					}
 				}
 			}
 		}
@@ -172,9 +175,9 @@ func (p *Parser) issue(cmd arbiter.Command) ([]byte, error) {
 	go func() {
 		select {
 		case <-p.ctx.Done(): //oh well
-			fmt.Println("Canceled", cmd.Name)
+			//fmt.Println("Canceled", cmd.Name)
 		case cresp <- p.dev.Control(cmd): //sent!
-			fmt.Println("Success", cmd.Name)
+			//fmt.Println("Success", cmd.Name)
 			// cancel()
 		}
 		close(cresp)
@@ -184,6 +187,9 @@ func (p *Parser) issue(cmd arbiter.Command) ([]byte, error) {
 	case <-p.ctx.Done(): //dying
 		return nil, p.ctx.Err()
 	case resp := <-cresp:
+		if resp.Error != nil {
+			fmt.Println(resp)
+		}
 		return resp.Bytes, resp.Error
 	}
 }
