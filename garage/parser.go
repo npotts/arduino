@@ -55,7 +55,7 @@ type Status struct {
 	FloorADC    uint64 `json:"floor_adc"`    //16bits
 	CeilingADC  uint64 `json:"ceiling_adc"`  //16bits
 	PercentOpen uint64 `json:"percent_open"` //8bits
-	Closed      bool   `json:"closeDoord"`
+	Closed      bool   `json:"closed"`
 	FullyOpen   bool   `json:"fully_open"`
 }
 
