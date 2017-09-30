@@ -180,7 +180,7 @@ function guiUpdate() {
     if (this.readyState == 4 && this.status == 200) {
       json = JSON.parse(this.responseText);
       if ('percent_open' in json) document.getElementById("popen").value = json.percent_open;
-      document.getElementById("notice").innerHTML = ('fully_open' in json && json.fully_open) ? "is wipe open": "is open";
+      document.getElementById("notice").innerHTML = ('fully_open' in json && json.fully_open) ? "is wide open": "is open";
       if ('closed' in json && json.closed) {
         document.getElementById("notice").innerHTML = "is closed";
       }
