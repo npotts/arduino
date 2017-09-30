@@ -157,7 +157,6 @@ func (p *Parser) Start() {
 						p.smux.Lock()
 						p.last = ns
 						p.smux.Unlock()
-						fmt.Println(ns)
 					}
 				}
 			}
