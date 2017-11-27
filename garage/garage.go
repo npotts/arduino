@@ -35,7 +35,7 @@ import (
 var (
 	app     = kingpin.New("garage", "Exporting a garage door to the great wide internets")
 	baud    = app.Flag("baud", "Specify the baud rate. Default is the compiled in baud rate").Short('b').Default("115200").Int()
-	device  = app.Flag("device", "The RS232 serial device connected to the Arduino that controls the garage door (http://github.com/npotts/arduino/garage)").Short('d').Default("/dev/ttyUSB0").String()
+	device  = app.Flag("device", "The RS232 serial device connected to the Arduino that controls the garage door (http://github.com/npotts/arduino/garage)").Short('d').Default("serial:///dev/ttyUSB0").String()
 	webport = app.Flag("port", "HTTP port to listen for incoming connections from").Short('p').Default("80").Int()
 	after   = app.Flag("after", "If the garage is open after this time, in Kitchen Timer format (11:32AM), the daemon will attempt to close the door automatically.").Short('t').Default("10:00PM").String()
 	before  = app.Flag("before", "Same as above, but before this.  Sorry if you work the graveyard shift").Short('T').Default("7:00AM").String()

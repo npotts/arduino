@@ -30,7 +30,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"github.com/NCAR/ACSd/monitor/arbiter"
+	"github.com/NCAR/agnoio"
 	"github.com/pkg/errors"
 	"net/http"
 	"regexp"
@@ -40,12 +40,12 @@ import (
 )
 
 var (
-	alwaysSuccess = arbiter.Command{Name: "Always succeeds", Timeout: 1000 * time.Millisecond, Prototype: "", CommandRegexp: regexp.MustCompile(".*"), Response: regexp.MustCompile(".*"), Error: nil, Description: "Always succeeds"}
-	cstatus       = arbiter.Command{Name: "Status", Timeout: 100 * time.Millisecond, Prototype: "?", CommandRegexp: regexp.MustCompile("\\?"), Response: regexp.MustCompile("[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*\r\n"), Error: nil, Description: "Get status"}
-	recal         = arbiter.Command{Name: "Recal", Timeout: 2 * time.Minute, Prototype: "~", CommandRegexp: regexp.MustCompile("~"), Response: regexp.MustCompile(".*\n"), Error: nil, Description: "Get status"}
-	open          = arbiter.Command{Name: "Open Door", Timeout: 20 * time.Second, Prototype: "o", CommandRegexp: regexp.MustCompile("o"), Response: regexp.MustCompile("opened"), Error: regexp.MustCompile("nope"), Description: "Opens the Door"}
-	closeDoor     = arbiter.Command{Name: "Close Door", Timeout: 20 * time.Second, Prototype: "c", CommandRegexp: regexp.MustCompile("c"), Response: regexp.MustCompile("closeDoord"), Error: regexp.MustCompile("nope"), Description: "Closes the door"}
-	toggle        = arbiter.Command{Name: "Toggle Button", Timeout: 10 * time.Second, Prototype: "^", CommandRegexp: regexp.MustCompile("^"), Response: regexp.MustCompile("Pushing button"), Error: nil, Description: "Toggles the door"}
+	alwaysSuccess = agnoio.Command{Name: "Always succeeds", Timeout: 1000 * time.Millisecond, Prototype: "", CommandRegexp: regexp.MustCompile(".*"), Response: regexp.MustCompile(".*"), Error: nil, Description: "Always succeeds"}
+	cstatus       = agnoio.Command{Name: "Status", Timeout: 100 * time.Millisecond, Prototype: "?", CommandRegexp: regexp.MustCompile("\\?"), Response: regexp.MustCompile("[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*,[\\d]*\r\n"), Error: nil, Description: "Get status"}
+	recal         = agnoio.Command{Name: "Recal", Timeout: 2 * time.Minute, Prototype: "~", CommandRegexp: regexp.MustCompile("~"), Response: regexp.MustCompile(".*\n"), Error: nil, Description: "Get status"}
+	open          = agnoio.Command{Name: "Open Door", Timeout: 20 * time.Second, Prototype: "o", CommandRegexp: regexp.MustCompile("o"), Response: regexp.MustCompile("opened"), Error: regexp.MustCompile("nope"), Description: "Opens the Door"}
+	closeDoor     = agnoio.Command{Name: "Close Door", Timeout: 20 * time.Second, Prototype: "c", CommandRegexp: regexp.MustCompile("c"), Response: regexp.MustCompile("closeDoord"), Error: regexp.MustCompile("nope"), Description: "Closes the door"}
+	toggle        = agnoio.Command{Name: "Toggle Button", Timeout: 10 * time.Second, Prototype: "^", CommandRegexp: regexp.MustCompile("^"), Response: regexp.MustCompile("Pushing button"), Error: nil, Description: "Toggles the door"}
 )
 
 /*Status is the message the garage door emits*/
@@ -116,10 +116,10 @@ func (s Status) String() string {
 	return fmt.Sprintf(`Clk: %d P:% 4d Floor:% 4d Ceiling:% 4d %%Open:% 3d Closed: %5v FullyOpen: %5v`, s.Millis, s.Pos, s.FloorADC, s.CeilingADC, s.PercentOpen, s.Closed, s.FullyOpen)
 }
 
-/*NewParser returns a new parsers after openening the arbiter*/
+/*NewParser returns a new parsers after openening the agnoio*/
 func NewParser(ctx context.Context, dial string) (*Parser, error) {
 	nctx, cancel := context.WithCancel(ctx)
-	arb, err := arbiter.OpenArbiter(dial, 1000*time.Millisecond, alwaysSuccess)
+	arb, err := agnoio.NewArbiter(nctx, 1000*time.Millisecond, dial)
 	p := &Parser{
 		ctx:  nctx,
 		cncl: cancel,
@@ -135,7 +135,7 @@ type Parser struct {
 	ctx    context.Context
 	cncl   context.CancelFunc
 	devmux sync.RWMutex
-	dev    arbiter.Arbiter
+	dev    agnoio.Arbiter
 	smux   sync.RWMutex
 	last   *Status
 }
@@ -164,12 +164,12 @@ func (p *Parser) Start() {
 	}()
 }
 
-func (p *Parser) issue(cmd arbiter.Command) ([]byte, error) {
+func (p *Parser) issue(cmd agnoio.Command) ([]byte, error) {
 	p.devmux.Lock()
 	defer p.devmux.Unlock()
 
 	// ctx, cancel := context.WithTimeout(p.ctx, 300*time.Millisecond)
-	cresp := make(chan arbiter.Response, 0)
+	cresp := make(chan agnoio.Response, 0)
 
 	go func() {
 		select {
